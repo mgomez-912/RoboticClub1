@@ -1,8 +1,7 @@
 #include "RGBLed.h"
 
 #define pinLed 48           
-#define pixels  1     // Number of LEDs (1 LED in this case)
-// #define blinkTime  500   // Delay time in milliseconds
+#define pixels  1           // Number of LEDs (1 LED in this case)
 
 Adafruit_NeoPixel LedBuilt(1, pinLed, NEO_GRB + NEO_KHZ800);
 
@@ -29,7 +28,6 @@ void RGBLed(void *pvParameters) {
     while (true) {
         LedBuilt.fill(colors[currentColor]);  // Set all pixels to the current color
         LedBuilt.show();
-        // vTaskDelay(pdMS_TO_TICKS(blinkTime));
         vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);  // Delay for the blink time
 
         // Move to the next color

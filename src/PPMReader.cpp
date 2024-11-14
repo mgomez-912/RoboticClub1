@@ -1,16 +1,14 @@
 #include "PPMReader.h"
 
 const int PPM_PIN = 5;              // Pin connected to the PPM signal
-const int NUM_CHANNELS = 6;         // Number of channels to read
 const int SYNC_GAP = 3000;          // Minimum time (in microseconds) to consider as a sync gap
 const int MIN_PULSE_WIDTH = 900;    // Minimum pulse width (in microseconds) for a valid signal
 const int MAX_PULSE_WIDTH = 2100;   // Maximum pulse width (in microseconds) for a valid signal
 
 volatile unsigned long lastTime = 0;
-volatile unsigned int channelValues[NUM_CHANNELS];  // Array to store channel values
 volatile int currentChannel = 0;
 
-void RXRread(void *pvParameters) {
+void RXRead(void *pvParameters) {
     pinMode(PPM_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(PPM_PIN), ppmInterruptHandler, FALLING);
 

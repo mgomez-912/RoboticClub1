@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "GlobalVariables.h"
 
-void RXRread(void *pvParameters);
+void RXRead(void *pvParameters);
 void IRAM_ATTR ppmInterruptHandler();
 
 #endif
