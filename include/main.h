@@ -4,7 +4,8 @@
 
 #include "GlobalVariables.h"
 
-#include <Adafruit_NeoPixel.h> 
+#include <Adafruit_NeoPixel.h>
 #include "RGBLed.h"
 #include "TaskManager.h"
 #include "TaskPrint.h"
+#include "TaskTest.h"

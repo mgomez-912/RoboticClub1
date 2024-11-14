@@ -7,5 +7,6 @@
 extern TaskManager taskManager;
 extern TaskManager taskRGBLed;
 extern TaskManager taskPrint;
+extern TaskManager taskTesting;
 
 #endif
