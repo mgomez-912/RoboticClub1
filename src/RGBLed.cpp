@@ -1,5 +1,9 @@
 #include "RGBLed.h"
 
+#define pinLed 48           
+#define pixels  1     // Number of LEDs (1 LED in this case)
+// #define blinkTime  500   // Delay time in milliseconds
+
 Adafruit_NeoPixel LedBuilt(1, pinLed, NEO_GRB + NEO_KHZ800);
 
 // Define the colors to cycle through (Red, Green, Blue, Yellow, Magenta, Cyan, White, Off)
