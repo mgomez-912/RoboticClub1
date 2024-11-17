@@ -1,7 +1,7 @@
 #include "RGBLed.h"
 
-#define pinLed 48           
-#define pixels  1           // Number of LEDs (1 LED in this case)
+const int pinLed = 48;           
+const int pixels = 1;           // Number of LEDs (1 LED in this case)
 
 Adafruit_NeoPixel LedBuilt(1, pinLed, NEO_GRB + NEO_KHZ800);
 

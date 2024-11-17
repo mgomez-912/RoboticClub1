@@ -38,7 +38,7 @@ void MotorDriving(void *pvParameters){
 
         decision(adv1, turn1);                      //Motors function
 
-        vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);
+        vTaskDelay(taskMotorDriving.getIntervalms() / portTICK_PERIOD_MS);
     }
 }
 
@@ -147,7 +147,7 @@ void M1(bool direction,int speed, bool motorNumber)
         lastDirM1=CW;    
         }
     }
-    if(motorNumber == 1){
+    if(motorNumber == 2){
         if(speed<0 || speed>255){
             vTaskDelay(1);
         }

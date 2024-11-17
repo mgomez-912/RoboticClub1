@@ -5,8 +5,13 @@
 #include "GlobalVariables.h"
 
 #include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_PWMServoDriver.h>
+
 #include "RGBLed.h"
 #include "TaskManager.h"
 #include "TaskPrint.h"
 #include "PPMReader.h"
 #include "DriveMotor.h"
+#include "PWMExtender.h"
