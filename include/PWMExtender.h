@@ -15,7 +15,8 @@ const int DEFAULT_PULSE_WIDTH = 1500;
 const int FREQUENCY = 50;
 
 
-void PWMExtender(void *pvParameters);
+// void PWMExtender(void *pvParameters);
+void PWMExtender(int Channel, int val);
 int pulseWidth(int angle);
 
 #endif

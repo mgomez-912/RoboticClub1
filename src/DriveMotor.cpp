@@ -1,13 +1,14 @@
 #include "DriveMotor.h"
+#include "PWMExtender.h"
 
-const int lim = 150;         //speed limit
+const int lim = 200;         //speed limit
 const int motorDel = 50;
 
 //all pins must be PWM enabled pin with ~ printed beside them
-const int M1_Forward = 8;
-const int M1_Reverse = 9;
-const int M2_Forward = 10;
-const int M2_Reverse = 11;
+const int M1_Forward = 4;
+const int M1_Reverse = 5;
+const int M2_Forward = 6;
+const int M2_Reverse = 7;
 
 int c=0;                //decision cases
 int baseSpeed = 0;
@@ -33,8 +34,9 @@ void MotorDriving(void *pvParameters){
     pinMode(M2_Reverse, OUTPUT);
 
     while(true){
-        adv1 = channelValues[2];         // Read Channel 2 (forward, reverse)
-        turn1 = channelValues[4];       // Read Channel 4 (turn right, left)
+        //ChannelValues[Channel-1]**********************************************************************
+        adv1 = channelValues[1];        // Read Channel 2 (forward, reverse)
+        turn1 = channelValues[3];       // Read Channel 4 (turn right, left)
 
         decision(adv1, turn1);                      //Motors function
 
@@ -55,6 +57,9 @@ void decision(int signal1, int signal2){
   else{
     c=3;
   }
+  Serial.println(c);
+  Serial.println(signal1);
+
 
   switch (c) {
   case 1:
@@ -62,20 +67,20 @@ void decision(int signal1, int signal2){
       brake(motorDel);
     break;
   case 2:
-      baseSpeed = map(signal1,1500,2000,0,lim);
+      baseSpeed = map(signal1,1540,2020,0,lim);
       forward(baseSpeed,signal2);
     break;
   case 3:
-    baseSpeed = map(signal1,1450,1000,0,lim); 
+    baseSpeed = map(signal1,1450,980,0,lim); 
       reverse(baseSpeed,signal2);
     break;
   case 4:
       if(signal2<minres){
-        baseSpeed=map(signal2,1450,1000,0,lim);
+        baseSpeed=map(signal2,1450,980,0,lim);
         turn(CW, CCW, baseSpeed, baseSpeed);
       }
       else if(signal2>maxres){
-        baseSpeed=map(signal2,1550,1995,0,lim);
+        baseSpeed=map(signal2,1540,2020,0,lim);
         turn(CCW, CW, baseSpeed, baseSpeed);
       }
     break;
@@ -90,13 +95,13 @@ void forward(int speed, int signal2){
     turn(CW, CW, speed, speed);
     }
     else if(signal2<minres){
-      int turnL = (speed)-(map(signal2,1450,1000,0,lim)*0.75);
+      int turnL = (speed)-(map(signal2,1450,980,0,lim)*0.75);
       if(turnL>0 && turnL<lim){
         turn(CW, CW, speed, turnL);
       }
     }
     else if(signal2>maxres){
-      int turnR = (speed)-(map(signal2,1550,1995,0,lim)*0.75);
+      int turnR = (speed)-(map(signal2,1550,2020,0,lim)*0.75);
       if(turnR>0 && turnR<lim){
         turn(CW, CW, turnR, speed);
       }
@@ -109,13 +114,13 @@ void reverse(int speed, int signal2){
     turn(CCW, CCW, speed, speed);
   }
   else if(signal2<minres){
-    int turnL = (speed)-(map(signal2,1450,1000,0,lim)/2);
+    int turnL = (speed)-(map(signal2,1450,980,0,lim)/2);
     if(turnL>0 && turnL<lim){
       turn(CCW, CCW, speed, turnL);
     }
   }
   else if(signal2>maxres){
-    int turnR = (speed)-(map(signal2,1550,1995,0,lim)/2);
+    int turnR = (speed)-(map(signal2,1550,2020,0,lim)/2);
     if(turnR>0 && turnR<lim){
       turn(CCW, CCW, turnR, speed);
     }
@@ -123,15 +128,15 @@ void reverse(int speed, int signal2){
 }
 
 void turn(bool dir1, bool dir2, int speed1, int speed2){
-  M1(dir1, speed1, 1);
-  M1(dir2, speed2, 2);
+  M1(dir1, speed1, 0);
+  M1(dir2, speed2, 1);
 }
 
 void M1(bool direction,int speed, bool motorNumber)
 {
-    if(motorNumber == 1){
+    if(motorNumber == 0){
         if(speed<0 || speed>255){
-            vTaskDelay(1);
+            return;
         }
         else if(direction != lastDirM1){
             stop(3,500);
@@ -147,9 +152,9 @@ void M1(bool direction,int speed, bool motorNumber)
         lastDirM1=CW;    
         }
     }
-    if(motorNumber == 2){
+    if(motorNumber == 1){
         if(speed<0 || speed>255){
-            vTaskDelay(1);
+            return;
         }
         else if(direction != lastDirM2){
             stop(3,500);
@@ -199,5 +204,211 @@ void stop(int motor, int del)
     analogWrite(M2_Forward,LOW);
     analogWrite(M2_Reverse,LOW);
   }
-  delay(del);
+  vTaskDelay(pdMS_TO_TICKS(del)); // Convert milliseconds to ticks
 }
+
+// #include "DriveMotor.h"
+// #include "PWMExtender.h"
+
+// const int lim = 255;         //speed limit
+// const int motorDel = 50;
+
+// //all pins must be PWM enabled pin with ~ printed beside them
+// const int M1_Forward = 0;
+// const int M1_Reverse = 1;
+// const int M2_Forward = 2;
+// const int M2_Reverse = 3;
+
+// int c=0;                //decision cases
+// int baseSpeed = 0;
+
+// //direction states
+// bool CW = true;
+// bool CCW = false;
+// bool lastDirM1;
+// bool lastDirM2;
+
+// //deadpoints
+// int minres=1400;
+// int maxres=1600;
+
+// //channels
+// int adv1=1500;           //RC control Channel 2
+// int turn1=1500;          //RC control Channel 4
+
+// void MotorDriving(void *pvParameters){
+//     // pinMode(M1_Forward, OUTPUT);
+//     // pinMode(M1_Reverse, OUTPUT);
+//     // pinMode(M2_Forward, OUTPUT);
+//     // pinMode(M2_Reverse, OUTPUT);
+
+//     while(true){
+//         //ChannelValues[Channel-1]**********************************************************************
+//         adv1 = channelValues[1];        // Read Channel 2 (forward, reverse)
+//         turn1 = channelValues[3];       // Read Channel 4 (turn right, left)
+
+//         decision(adv1, turn1);                      //Motors function
+
+//         vTaskDelay(taskMotorDriving.getIntervalms() / portTICK_PERIOD_MS);
+//     }
+// }
+
+// void decision(int signal1, int signal2){
+//   if(signal1>minres && signal1<maxres){
+//     c=1;
+//     if(signal2<minres || signal2>maxres){
+//       c=4;
+//     }
+//   }
+//   else if(signal1>maxres){
+//     c=2;
+//   }
+//   else{
+//     c=3;
+//   }
+
+//   switch (c) {
+//   case 1:
+//       baseSpeed = 0;
+//       brake(motorDel);
+//     break;
+//   case 2:
+//       baseSpeed = map(signal1,1500,2020,0,lim);
+//       forward(baseSpeed,signal2);
+//     break;
+//   case 3:
+//     baseSpeed = map(signal1,1450,980,0,lim); 
+//       reverse(baseSpeed,signal2);
+//     break;
+//   case 4:
+//       if(signal2<minres){
+//         baseSpeed=map(signal2,1450,980,0,lim);
+//         turn(CW, CCW, baseSpeed, baseSpeed);
+//       }
+//       else if(signal2>maxres){
+//         baseSpeed=map(signal2,1550,2020,0,lim);
+//         turn(CCW, CW, baseSpeed, baseSpeed);
+//       }
+//     break;
+//   default:
+//     stop(3,50);
+//     break;
+//   }
+// }
+
+// void forward(int speed, int signal2){
+//   if(signal2>minres && signal2<maxres){
+//     turn(CW, CW, speed, speed);
+//     }
+//     else if(signal2<minres){
+//       int turnL = (speed)-(map(signal2,1450,980,0,lim)*0.75);
+//       if(turnL>0 && turnL<lim){
+//         turn(CW, CW, speed, turnL);
+//       }
+//     }
+//     else if(signal2>maxres){
+//       int turnR = (speed)-(map(signal2,1550,2020,0,lim)*0.75);
+//       if(turnR>0 && turnR<lim){
+//         turn(CW, CW, turnR, speed);
+//       }
+//     }
+// }
+
+
+// void reverse(int speed, int signal2){
+//   if(signal2>minres && signal2<maxres){
+//     turn(CCW, CCW, speed, speed);
+//   }
+//   else if(signal2<minres){
+//     int turnL = (speed)-(map(signal2,1450,980,0,lim)/2);
+//     if(turnL>0 && turnL<lim){
+//       turn(CCW, CCW, speed, turnL);
+//     }
+//   }
+//   else if(signal2>maxres){
+//     int turnR = (speed)-(map(signal2,1550,2020,0,lim)/2);
+//     if(turnR>0 && turnR<lim){
+//       turn(CCW, CCW, turnR, speed);
+//     }
+//   }
+// }
+
+// void turn(bool dir1, bool dir2, int speed1, int speed2){
+//   M1(dir1, speed1, 1);
+//   M1(dir2, speed2, 2);
+// }
+
+// void M1(bool direction,int speed, bool motorNumber)
+// {
+//     if(motorNumber == 1){
+//         if(speed<0 || speed>255){
+//             vTaskDelay(1);
+//         }
+//         else if(direction != lastDirM1){
+//             stop(3,500);
+//         }
+//         else if(direction == CCW)
+//         {
+//         PWMExtender(M1_Forward,speed);
+//         PWMExtender(M1_Reverse,0);
+//         lastDirM1=CCW;    
+//         }else{
+//         PWMExtender(M1_Reverse,speed);
+//         PWMExtender(M1_Forward,0);  
+//         lastDirM1=CW;    
+//         }
+//     }
+//     if(motorNumber == 2){
+//         if(speed<0 || speed>255){
+//             vTaskDelay(1);
+//         }
+//         else if(direction != lastDirM2){
+//             stop(3,500);
+//         }
+//         else if(direction == CW)
+//         {
+//         PWMExtender(M2_Forward,speed);
+//         PWMExtender(M2_Reverse,0);
+//         lastDirM2=CW;   
+//         }else{
+//         PWMExtender(M2_Reverse,speed);
+//         PWMExtender(M2_Forward,0); 
+//         lastDirM2=CCW;    
+//         }
+//     }
+// }
+
+// void brake(int motor)
+// {
+//    if(motor == 1)
+//   {
+//     PWMExtender(M1_Forward,255);
+//     PWMExtender(M1_Reverse,255);   
+//   }else if(motor == 2){
+//     PWMExtender(M2_Forward,255);
+//     PWMExtender(M2_Reverse,255);     
+//   } else{
+//     PWMExtender(M1_Forward,255);
+//     PWMExtender(M1_Reverse,255);
+//     PWMExtender(M2_Forward,255);
+//     PWMExtender(M2_Reverse,255);  
+//   }
+// }
+
+// void stop(int motor, int del)
+// {
+//    if(motor == 1)
+//   {
+//    PWMExtender(M1_Forward,0);
+//    PWMExtender(M1_Reverse,0);  
+//   }else if(motor == 2){
+//    PWMExtender(M2_Forward,0);
+//    PWMExtender(M2_Reverse,0);  
+//   } else{
+//     PWMExtender(M1_Forward,0);
+//     PWMExtender(M1_Reverse,0);
+//     PWMExtender(M2_Forward,0);
+//     PWMExtender(M2_Reverse,0);
+//   }
+//   delay(del);
+// }
