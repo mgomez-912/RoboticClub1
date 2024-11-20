@@ -7,12 +7,6 @@ void myTask(void *pvParameters)
 {   
 
     analogWrite(ledpin,map(channelValues[0],950,2005,0,255));
-    // Serial.print("channel 2 ");
-    // Serial.println(map(channelValues[1],950,2005,0,255));
-    // digitalWrite(ledpin,HIGH);
-    // delay(200);
-    // digitalWrite(ledpin,LOW);
-    // delay(200);
     vTaskDelay(50);
 
 }
@@ -31,7 +25,7 @@ void setup()
     // Configure the task to run on Core 1
     taskManager.taskCreation(myTask, "Core1_Task", 2048, 500, 3, 1); // Task created on main.cpp
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 
-    taskMotorDriving.taskCreation(MotorDriving,"Core1_MotorDriving",4096,100,5,0);
+    taskMotorDriving.taskCreation(MotorDriving,"Core1_MotorDriving",4096,50,5,0);
 }
 
 void loop()
