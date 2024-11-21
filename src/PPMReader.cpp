@@ -1,6 +1,6 @@
 #include "PPMReader.h"
 
-const int PPM_PIN = 3;              // Pin connected to the PPM signal
+const int PPM_PIN = 2;              // Pin connected to the PPM signal
 const int SYNC_GAP = 3000;          // Minimum time (in microseconds) to consider as a sync gap
 const int MIN_PULSE_WIDTH = 900;    // Minimum pulse width (in microseconds) for a valid signal
 const int MAX_PULSE_WIDTH = 2100;   // Maximum pulse width (in microseconds) for a valid signal
@@ -12,13 +12,13 @@ void RXRead(void *pvParameters) {
     pinMode(PPM_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(PPM_PIN), ppmInterruptHandler, FALLING);
 
-    // Print the most recent values for each channel
-    for (int i = 0; i < NUM_CHANNELS; i++) {
+    // // Print the most recent values for each channel
+    // for (int i = 0; i < NUM_CHANNELS; i++) {
 
-        Serial.print(channelValues[i]);
-        Serial.print(" \t");
-    }
-    Serial.println();
+    //     Serial.print(channelValues[i]);
+    //     Serial.print(" \t");
+    // }
+    // Serial.println();
     vTaskDelay(taskRXRead.getIntervalms() / portTICK_PERIOD_MS);  // Short delay to limit serial output rate
 }
 

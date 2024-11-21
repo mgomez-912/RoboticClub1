@@ -17,6 +17,17 @@ const uint32_t colors[] = {
     LedBuilt.Color(0, 0, 0)        // Off
 };
 
+const uint32_t colors2[] = {
+    LedBuilt.Color(255,215,0),      // gold
+    LedBuilt.Color(107,142,35),     // Olive drab
+    LedBuilt.Color(47,79,79),       // dark slate gray
+    LedBuilt.Color(127,255,212),    // aqua marine	#7FFFD4
+    LedBuilt.Color(0,0,128),        // navy	#000080
+    LedBuilt.Color(186,85,211),     // medium orchid	#BA55D3
+    LedBuilt.Color(139,69,19),      // saddle brown	#8B4513
+    LedBuilt.Color(255,127,80)         // coral	#FF7F50
+};
+
 // Task function that handles LED blinking
 void RGBLed(void *pvParameters) {
     size_t numColors = sizeof(colors) / sizeof(colors[0]);
@@ -26,8 +37,15 @@ void RGBLed(void *pvParameters) {
     LedBuilt.show();  // Initialize all pixels to 'off'
 
     while (true) {
-        LedBuilt.fill(colors[currentColor]);  // Set all pixels to the current color
-        LedBuilt.show();
+        if(channelValues[5]>1200 && channelValues[5]<1700){
+            LedBuilt.fill(colors[currentColor]);  // Set all pixels to the current color
+            LedBuilt.show();
+        }
+
+        if(channelValues[5]>1800 && channelValues[5]<2050){
+            LedBuilt.fill(colors2[currentColor]);  // Set all pixels to the current color
+            LedBuilt.show();
+        }
         vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);  // Delay for the blink time
 
         // Move to the next color

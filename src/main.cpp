@@ -18,7 +18,7 @@ void setup()
 
     // Configure the task to run on Core 0
     // task.taskCreation(Function, Name, Size, sleepTime, priority (0-5), core);
-    // taskRGBLed.taskCreation(RGBLed, "Core0_blinkRGB", 2048, 500, 2, 0);      // External Task
+    taskRGBLed.taskCreation(RGBLed, "Core0_blinkRGB", 2048, 500, 2, 0);      // External Task
     taskRXRead.taskCreation(RXRead,"Core0_RXReader",2048,20,5,0); 
     // taskPWMExt.taskCreation(PWMExtender,"Core0_PWMExtender",2048,50,3,0);    
     
