@@ -1,15 +1,13 @@
 #include "main.h"
 
-#define ledpin LED_BUILTIN
-
 // Task function
-void myTask(void *pvParameters)
-{   
+// void myTask(void *pvParameters)
+// {   
 
-    analogWrite(ledpin,map(channelValues[0],950,2005,0,255));
-    vTaskDelay(50);
+//     analogWrite(ledpin,map(channelValues[0],950,2005,0,255));
+//     vTaskDelay(50);
 
-}
+// }
 
 
 void setup()
@@ -23,7 +21,7 @@ void setup()
     // taskPWMExt.taskCreation(PWMExtender,"Core0_PWMExtender",2048,50,3,0);    
     
     // Configure the task to run on Core 1
-    taskManager.taskCreation(myTask, "Core1_Task", 2048, 500, 3, 1); // Task created on main.cpp
+    // taskManager.taskCreation(myTask, "Core1_Task", 2048, 500, 3, 1); // Task created on main.cpp
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 
     taskMotorDriving.taskCreation(MotorDriving,"Core1_MotorDriving",4096,50,5,0);
 }

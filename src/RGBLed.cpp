@@ -1,7 +1,7 @@
 // #include "RGBLed.h"
 
-// const int pinLed = 48;           
-// const int pixels = 1;           // Number of LEDs (1 LED in this case)
+// const int pinLed = 40;           
+// const int pixels = 32;           // Number of LEDs (1 LED in this case)
 
 // Adafruit_NeoPixel LedBuilt(1, pinLed, NEO_GRB + NEO_KHZ800);
 
@@ -56,38 +56,61 @@
 // }
 
 
-// //Rainbow pattern
-// #include "RGBLed.h"
+//Rainbow pattern
+#include "RGBLed.h"
 
-// const int pinLed = 15;           // GPIO pin connected to the LED strip
-// const int pixels = 92;           // Number of LEDs in the WS2815 strip
+const int pinLed = 41;           // GPIO pin connected to the LED strip 41 or 42
+const int pixels = 32;           // Number of LEDs in the WS2815 strip
 
-// Adafruit_NeoPixel LedStrip(pixels, pinLed, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel LedStrip(pixels, pinLed, NEO_GRB + NEO_KHZ800);
 
-// // Task function to create a fast-moving rainbow pattern
-// void RGBLed(void *pvParameters) {
-//     LedStrip.begin();
-//     LedStrip.show();  // Initialize all pixels to 'off'
+// Task function to create a fast-moving rainbow pattern
+void RGBLed(void *pvParameters) {
+    LedStrip.begin();
+    LedStrip.show();  // Initialize all pixels to 'off'
 
-//     int colorOffset = 0;  // Offset for shifting colors along the strip
+    int colorOffset = 0;  // Offset for shifting colors along the strip
+    int frame = 0;  // Animation frame counter
+    float brightness = 0.5;
 
-//     while (true) {
-//         // Update the colors on the strip based on the offset
-//         for (int i = 0; i < LedStrip.numPixels(); i++) {
-//             // Calculate the color for this pixel
-//             int hue = (colorOffset + (i * 360 / LedStrip.numPixels())) % 360;
-//             uint32_t color = LedStrip.gamma32(LedStrip.ColorHSV(hue * 182));  // Convert hue to color
-//             LedStrip.setPixelColor(i, color);
-//         }
-//         LedStrip.show();
+    while (true) {
+        if(channelValues[5]>1200 && channelValues[5]<1700){
+            // Update the colors on the strip based on the offset
+            for (int i = 0; i < LedStrip.numPixels(); i++) {
+                // Calculate the color for this pixel
+                int hue = (colorOffset + (i * 360 / LedStrip.numPixels())) % 360;
+                uint32_t color = LedStrip.gamma32(LedStrip.ColorHSV(hue * 182));  // Convert hue to color
+                LedStrip.setPixelColor(i, color);
+                LedStrip.show();
 
-//         // Increment the offset more aggressively for faster movement
-//         colorOffset = (colorOffset + 10) % 360;
+                // Increment the offset more aggressively for faster movement
+                colorOffset = (colorOffset + 10) % 360;}
+            }else if(channelValues[5]>1800 && channelValues[5]<2050){
+                // Update the colors on the strip for the current frame
+                for (int i = 0; i < LedStrip.numPixels(); i++) {
+                    // Create a gradient effect across the strip
+                    int hue = (frame + (i * 360 / LedStrip.numPixels())) % 360;  // Color gradient
+                    uint32_t color = LedStrip.ColorHSV(hue * 182);  // Convert hue to color
 
-//         // Reduce the delay for faster updates
-//         vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);  // Adjust delay to control the speed further
-//     }
-// }
+                    // Apply brightness adjustment
+                    uint8_t red = (uint8_t)(((color >> 16) & 0xFF) * brightness);
+                    uint8_t green = (uint8_t)(((color >> 8) & 0xFF) * brightness);
+                    uint8_t blue = (uint8_t)((color & 0xFF) * brightness);
+
+                    LedStrip.setPixelColor(i, LedStrip.Color(red, green, blue));
+                    LedStrip.show();
+                    // Increment the frame to animate the gradient
+                    frame = (frame + 5) % 360;  // Speed of gradient transition
+                }
+                } else {
+                    LedStrip.fill((0,0,0));
+                    LedStrip.show();
+                }
+
+        // Reduce the delay for faster updates
+        vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);  // Adjust delay to control the speed further
+    }
+}
 
 // #include "RGBLed.h"
 // #include <math.h>  // For the sin() function
@@ -125,43 +148,43 @@
 //     }
 // }
 
-#include "RGBLed.h"
+// #include "RGBLed.h"
 
-const int pinLed = 15;           // GPIO pin connected to the LED strip
-const int pixels = 620;           // Number of LEDs in the WS2815 strip
+// const int pinLed = 40;           // GPIO pin connected to the LED strip 40 and 41 are ok
+// const int pixels = 32;           // Number of LEDs in the WS2815 strip
 
-Adafruit_NeoPixel LedStrip(pixels, pinLed, NEO_GRB + NEO_KHZ800);
+// Adafruit_NeoPixel LedStrip(pixels, pinLed, NEO_GRB + NEO_KHZ800);
 
-// Adjustable brightness (0.0 to 1.0, where 1.0 is full brightness)
-float brightness = 0.5;  // Default: 90% brightness
+// // Adjustable brightness (0.0 to 1.0, where 1.0 is full brightness)
+// float brightness = 0.5;  // Default: 90% brightness
 
-// Task function for gradient pulsing pattern
-void RGBLed(void *pvParameters) {
-    LedStrip.begin();
-    LedStrip.show();  // Initialize all pixels to 'off'
+// // Task function for gradient pulsing pattern
+// void RGBLed(void *pvParameters) {
+//     LedStrip.begin();
+//     LedStrip.show();  // Initialize all pixels to 'off'
 
-    int frame = 0;  // Animation frame counter
+//     int frame = 0;  // Animation frame counter
 
-    while (true) {
-        // Update the colors on the strip for the current frame
-        for (int i = 0; i < LedStrip.numPixels(); i++) {
-            // Create a gradient effect across the strip
-            int hue = (frame + (i * 360 / LedStrip.numPixels())) % 360;  // Color gradient
-            uint32_t color = LedStrip.ColorHSV(hue * 182);  // Convert hue to color
+//     while (true) {
+//         // Update the colors on the strip for the current frame
+//         for (int i = 0; i < LedStrip.numPixels(); i++) {
+//             // Create a gradient effect across the strip
+//             int hue = (frame + (i * 360 / LedStrip.numPixels())) % 360;  // Color gradient
+//             uint32_t color = LedStrip.ColorHSV(hue * 182);  // Convert hue to color
 
-            // Apply brightness adjustment
-            uint8_t red = (uint8_t)(((color >> 16) & 0xFF) * brightness);
-            uint8_t green = (uint8_t)(((color >> 8) & 0xFF) * brightness);
-            uint8_t blue = (uint8_t)((color & 0xFF) * brightness);
+//             // Apply brightness adjustment
+//             uint8_t red = (uint8_t)(((color >> 16) & 0xFF) * brightness);
+//             uint8_t green = (uint8_t)(((color >> 8) & 0xFF) * brightness);
+//             uint8_t blue = (uint8_t)((color & 0xFF) * brightness);
 
-            LedStrip.setPixelColor(i, LedStrip.Color(red, green, blue));
-        }
-        LedStrip.show();
+//             LedStrip.setPixelColor(i, LedStrip.Color(red, green, blue));
+//         }
+//         LedStrip.show();
 
-        // Increment the frame to animate the gradient
-        frame = (frame + 5) % 360;  // Speed of gradient transition
+//         // Increment the frame to animate the gradient
+//         frame = (frame + 5) % 360;  // Speed of gradient transition
 
-        // Control the speed of the pulsing effect
-        vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);
-    }
-}
+//         // Control the speed of the pulsing effect
+//         vTaskDelay(taskRGBLed.getIntervalms() / portTICK_PERIOD_MS);
+//     }
+// }
