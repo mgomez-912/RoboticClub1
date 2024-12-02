@@ -8,5 +8,6 @@ extern TaskManager taskManager;
 extern TaskManager taskRGBLed;
 extern TaskManager taskPrint;
 extern TaskManager taskTesting;
+extern TaskManager taskServot1;
 
 #endif
