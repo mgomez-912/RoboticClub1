@@ -24,6 +24,7 @@ void setup()
     // taskManager.taskCreation(myTask, "Core1_Task", 2048, 500, 3, 1); // Task created on main.cpp
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 
     taskMotorDriving.taskCreation(MotorDriving,"Core1_MotorDriving",4096,50,5,0);
+    taskServot1.taskCreation(Servot1, "Core0_sweepServo", 2048, 500, 2, 1);
 }
 
 void loop()

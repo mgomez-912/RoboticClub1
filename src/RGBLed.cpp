@@ -59,7 +59,7 @@
 //Rainbow pattern
 #include "RGBLed.h"
 
-const int pinLed = 41;           // GPIO pin connected to the LED strip 41 or 42
+const int pinLed = 16;           // GPIO pin connected to the LED strip 41 or 42
 const int pixels = 32;           // Number of LEDs in the WS2815 strip
 
 Adafruit_NeoPixel LedStrip(pixels, pinLed, NEO_GRB + NEO_KHZ800);
