@@ -11,11 +11,11 @@ const int M2_Forward = 6;
 const int M2_Reverse = 7;
 
 const int motorProt = 500;  // Default protection time for motor direction change
-const int speedlim = 200;   // Maximum input for the motor driver (0 - 255)
+const int speedlim = 150;   // Maximum input for the motor driver (0 - 255)
 
 // Channel values
-const int minres = 1425;
-const int maxres = 1575;
+const int minres = 1450;
+const int maxres = 1550;
 
 // Ramp-up configuration
 const int rampStep = 5;         // Step size for speed increase

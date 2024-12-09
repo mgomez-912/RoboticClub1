@@ -59,15 +59,33 @@
 //Rainbow pattern
 #include "RGBLed.h"
 
-const int pinLed = 16;           // GPIO pin connected to the LED strip 41 or 42
+const int pinLed = 41;           // GPIO pin connected to the LED strip 41 or 42
 const int pixels = 32;           // Number of LEDs in the WS2815 strip
 
+const int ringLed=39;
+const int pixelsRing = 80;
+
 Adafruit_NeoPixel LedStrip(pixels, pinLed, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel RingStrip(pixelsRing, ringLed, NEO_GRB + NEO_KHZ800);
+
+const uint32_t colors[] = {
+    RingStrip.Color(0, 255, 0),     // Red 3B
+    RingStrip.Color(255, 23, 19),   // Green 2F
+    RingStrip.Color(118, 62, 255),  // Blue 1B
+    RingStrip.Color(206,255, 1),   // Yellow 1F
+    RingStrip.Color(255, 0, 255),   // Magenta
+    RingStrip.Color(0, 255, 255),   // Cyan
+    RingStrip.Color(255, 255, 255), // White
+    RingStrip.Color(0, 0, 0)        // Off
+};
 
 // Task function to create a fast-moving rainbow pattern
 void RGBLed(void *pvParameters) {
     LedStrip.begin();
     LedStrip.show();  // Initialize all pixels to 'off'
+
+    RingStrip.begin();
+    RingStrip.show();  // Initialize all pixels to 'off'
 
     int colorOffset = 0;  // Offset for shifting colors along the strip
     int frame = 0;  // Animation frame counter
@@ -85,6 +103,10 @@ void RGBLed(void *pvParameters) {
 
                 // Increment the offset more aggressively for faster movement
                 colorOffset = (colorOffset + 10) % 360;}
+
+                RingStrip.fill(colors[6]);  // Set all pixels to the current color
+                RingStrip.show();
+
             }else if(channelValues[5]>1800 && channelValues[5]<2050){
                 // Update the colors on the strip for the current frame
                 for (int i = 0; i < LedStrip.numPixels(); i++) {
@@ -101,10 +123,18 @@ void RGBLed(void *pvParameters) {
                     LedStrip.show();
                     // Increment the frame to animate the gradient
                     frame = (frame + 5) % 360;  // Speed of gradient transition
+
+                    RingStrip.fill(colors[6]);
+                    RingStrip.show();
                 }
                 } else {
                     LedStrip.fill((0,0,0));
                     LedStrip.show();
+
+                    // RingStrip.Color(255, 177, 20),   // Yellow F1
+                    // RingStrip.Color(0, 166, 81),   // Green F2
+                    RingStrip.fill(0,0,0);
+                    RingStrip.show();
                 }
 
         // Reduce the delay for faster updates
