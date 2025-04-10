@@ -1,161 +1,102 @@
 #include "DriveMotor.h"
 
-bool isFirstRun = true;         // Tracks if this is the first run
-
-// Helper variables
-bool lastDirM1 = true;          // True: Forward, False: Reverse
-bool lastDirM2 = true;
-int currentSpeedM1 = 0;         // Current speed of Motor 1
-int currentSpeedM2 = 0;         // Current speed of Motor 2
-
-// State definitions
-enum RobotState { IDLE, FORWARD, REVERSE, TURN_LEFT, TURN_RIGHT };
-RobotState currentState = IDLE;
-RobotState lastState = IDLE; // Track the previous state for transitions
-
-// FreeRTOS tick-based timer
-TickType_t idleStartTick = 0;
-bool idleTimerRunning = false;                  // FreeRTOS timmer helper
+MotorState motors[4] = {
+    {true, 0, 0, M1_Forward, M1_Reverse},  // M1: Front-Right
+    {true, 0, 0, M2_Forward, M2_Reverse},  // M2: Front-Left
+    {true, 0, 0, M3_Forward, M3_Reverse},  // M3: Rear-Right 
+    {true, 0, 0, M4_Forward, M4_Reverse}   // M4: Rear-Left
+};
 
 void MotorDriving(void *pvParameters) {
-    if (isFirstRun) {
-        stopMotors(); // Ensure all motors are stopped
-        isFirstRun = false; // Reset the first-run flag
-        vTaskDelay(500 / portTICK_PERIOD_MS); // Optional delay to ensure stability
-    }
+    while(true) {
+        // Read channels with CORRECT inversion
+        int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
+        int strafe = scaleChannel(channelValues[0], false);     // Dont Invert rotation (strafe and rotation are changed)
+        int rotation = scaleChannel(channelValues[3], true);   // Invert strafe
 
-    while (true) {
-        // Read input signals (e.g., from receiver or other input source)
-        int advSignal = channelValues[1]; // Forward/Reverse
-        int turnSignal = channelValues[3]; // Left/Right
+        // Immediate stop detection
+        if(abs(throttle) + abs(strafe) + abs(rotation) < stopThreshold) {
+            stopMotors();
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            continue;
+        }
 
-        // Update state based on input
-        updateState(advSignal, turnSignal);
+        // Mecanum calculations (keep original signs)
+        motors[0].targetSpeed = throttle + strafe + rotation;  // FR
+        motors[1].targetSpeed = throttle - strafe + rotation;  // FL
+        motors[2].targetSpeed = throttle + strafe - rotation;  // RR
+        motors[3].targetSpeed = throttle - strafe - rotation;  // RL
 
-        // Execute actions for the current state
-        executeState();
+        // Constrain and update motors
+        for(int i=0; i<4; i++) {
+            motors[i].targetSpeed = constrain(motors[i].targetSpeed, -speedlim, speedlim);
+            updateMotor(motors[i]);
+        }
 
-        // Small delay for stability
         vTaskDelay(taskMotorDriving.getIntervalms() / portTICK_PERIOD_MS);
     }
 }
 
+int scaleChannel(int channelValue, bool invert) {
+    const int neutral = 1500;
+    const int effectiveMin = 1000;
+    const int effectiveMax = 2000;
 
-void updateState(int advSignal, int turnSignal) {
-    // Determine current state based on input signals
-    if (advSignal > minres && advSignal < maxres && turnSignal > minres && turnSignal < maxres) {
-        currentState = IDLE;
+    // Apply deadzone
+    if(abs(channelValue - neutral) < deadzone) return 0;
 
-        if (!idleTimerRunning) {                        // motor protection timer starts in deadband
-            idleStartTick = xTaskGetTickCount();        // Record the tick count when IDLE starts
-            idleTimerRunning = true;
-        }
-    } else {
-        idleTimerRunning = false;
+    // Split into two ranges: 1000-1500 and 1500-2000
+    if(channelValue < neutral) {
+        // Reverse range (1000-1500)
+        int scaled = map(channelValue, 
+                       effectiveMin, 
+                       neutral - deadzone, 
+                       speedlim, 
+                       0);
+        return invert ? scaled : -scaled;
     }
-
-    if (advSignal >= maxres) {
-        currentState = FORWARD;
-    } else if (advSignal <= minres) {
-        currentState = REVERSE;
-    } else if (turnSignal >= maxres) {
-        currentState = TURN_RIGHT;
-    } else if (turnSignal <= minres) {
-        currentState = TURN_LEFT;
-    }
-}
-
-void executeState() {
-    switch (currentState) {
-        case IDLE:
-            stopMotors();
-            break;
-        case FORWARD:
-            controlForward();
-            break;
-        case REVERSE:
-            controlReverse();
-            break;
-        case TURN_RIGHT:
-            setMotorDirection(true, map(channelValues[3], maxres, 2005, 0, speedlim*(0.5)),
-                              false, map(channelValues[3], maxres, 2005, 0, speedlim*(0.5)));
-            break;
-        case TURN_LEFT:
-            setMotorDirection(false, map(channelValues[3], minres, 995, 0, speedlim*(0.5)),
-                              true, map(channelValues[3], minres, 995, 0, speedlim*(0.5)));
-            break;
-    }
-
-    // Track the previous state for debugging or future use
-    lastState = currentState;
-}
-
-void controlForward() {
-    int baseSpeed = map(channelValues[1], maxres, 2005, 0, speedlim);
-    int adjustment = 0;
-
-    if (channelValues[3] > maxres) {
-        adjustment = map(channelValues[3], maxres, 2005, 0, baseSpeed);
-        setMotorDirection(true, baseSpeed, true, baseSpeed - adjustment);
-    } else if (channelValues[3] < minres) {
-        adjustment = map(channelValues[3], minres, 995, 0, baseSpeed);
-        setMotorDirection(true, baseSpeed - adjustment, true, baseSpeed);
-    } else {
-        setMotorDirection(true, baseSpeed, true, baseSpeed);
+    else {
+        // Forward range (1500-2000)
+        int scaled = map(channelValue, 
+                       neutral + deadzone, 
+                       effectiveMax, 
+                       0, 
+                       speedlim);
+        return invert ? -scaled : scaled;
     }
 }
 
-void controlReverse() {
-    int baseSpeed = map(channelValues[1], minres, 995, 0, speedlim);
-    int adjustment = 0;
+void updateMotor(MotorState &m) {
+    bool newDir = m.targetSpeed >= 0;
+    int absTarget = abs(m.targetSpeed);
 
-    if (channelValues[3] > maxres) {
-        adjustment = map(channelValues[3], maxres, 2005, 0, baseSpeed);
-        setMotorDirection(false, baseSpeed, false, baseSpeed - adjustment);
-    } else if (channelValues[3] < minres) {
-        adjustment = map(channelValues[3], minres, 995, 0, baseSpeed);
-        setMotorDirection(false, baseSpeed - adjustment, false, baseSpeed);
-    } else {
-        setMotorDirection(false, baseSpeed, false, baseSpeed);
+    // Direction change handling
+    if(newDir != m.currentDir) {
+        analogWrite(m.forwardPin, 0);
+        analogWrite(m.reversePin, 0);
+        m.currentSpeed = 0;
+        m.currentDir = newDir;
+        vTaskDelay(motorProt / portTICK_PERIOD_MS);
     }
+
+    // Aggressive ramping for stopping
+    int step = (absTarget > m.currentSpeed) ? 
+        rampStep :  // Acceleration
+        -rampStep * 4;  // Faster deceleration
+
+    m.currentSpeed = constrain(m.currentSpeed + step, 0, speedlim);
+
+    // Apply to motor
+    int activePin = m.currentDir ? m.forwardPin : m.reversePin;
+    analogWrite(activePin, m.currentSpeed);
+    analogWrite((m.currentDir ? m.reversePin : m.forwardPin), 0);
 }
 
 void stopMotors() {
-    analogWrite(M1_Forward, LOW);
-    analogWrite(M1_Reverse, LOW);
-    analogWrite(M2_Forward, LOW);
-    analogWrite(M2_Reverse, LOW);
-    currentSpeedM1 = 0;
-    currentSpeedM2 = 0;
-}
-
-void setMotorDirection(bool dirM1, int targetSpeedM1, bool dirM2, int targetSpeedM2) {
-    // Stop both motors if either motor direction is changing
-    if (dirM1 != lastDirM1 || dirM2 != lastDirM2) {
-        stopMotors(); // Stop both motors
-        vTaskDelay(motorProt / portTICK_PERIOD_MS); // Brief delay to ensure motors are fully stopped
-    }
-
-    // Update Motor 1
-    rampSpeed(currentSpeedM1, targetSpeedM1, dirM1 ? M1_Forward : M1_Reverse, dirM1 ? M1_Reverse : M1_Forward);
-    lastDirM1 = dirM1;
-
-    // Update Motor 2
-    rampSpeed(currentSpeedM2, targetSpeedM2, dirM2 ? M2_Forward : M2_Reverse, dirM2 ? M2_Reverse : M2_Forward);
-    lastDirM2 = dirM2;
-}
-
-void rampSpeed(int &currentSpeed, int targetSpeed, int controlPinForward, int controlPinReverse) {
-    while (currentSpeed != targetSpeed) {
-        if (currentSpeed < targetSpeed) {
-            currentSpeed += rampStep;
-            if (currentSpeed > targetSpeed) currentSpeed = targetSpeed;
-        } else {
-            currentSpeed -= rampStep;
-            if (currentSpeed < targetSpeed) currentSpeed = targetSpeed;
-        }
-        analogWrite(controlPinForward, currentSpeed);
-        analogWrite(controlPinReverse, LOW);
-        vTaskDelay(rampDelay / portTICK_PERIOD_MS);
+    for(int i=0; i<4; i++) {
+        motors[i].targetSpeed = 0;
+        motors[i].currentSpeed = 0;
+        analogWrite(motors[i].forwardPin, 0);
+        analogWrite(motors[i].reversePin, 0);
     }
 }
