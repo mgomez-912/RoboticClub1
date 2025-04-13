@@ -4,12 +4,14 @@
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 void ServoPCA(void *pvParameters) {
-    initializeServo();
+    initializeServo(0);
+    initializeServo(1);
 
     while(true) {
       // Sweep the servo back and forth
         Serial.println("Sweeping servo...");
-        sweepServo();
+        sweepServo(0);
+        sweepServo(1);
 
       vTaskDelay(taskServoPCA.getIntervalms() / portTICK_PERIOD_MS);  // Delay for the blink time
     }
@@ -18,7 +20,7 @@ void ServoPCA(void *pvParameters) {
 
 // Function to initialize the PCA9685
 // In TaskServoPCA.cpp - modify initializeServo()
-void initializeServo() {
+void initializeServo(int servoChannel) {
   Serial.begin(115200);
   while(!Serial); // Wait for serial monitor in debug mode
   
@@ -36,22 +38,8 @@ void initializeServo() {
   Serial.printf("PCA9685 initialized at %dHz\n", SERVO_FREQ);
   
   // Test communication
-  pwm.setPWM(SERVO_CHANNEL, 0, 0); // Start with servo off
+  pwm.setPWM(servoChannel, 0, 0); // Start with servo off
   delay(1000);
-}
-
-void setServoPulse(uint8_t n, double pulse) {
-  double pulselength;
-  
-  pulselength = 1000000;   // 1,000,000 us per second
-  pulselength /= SERVO_FREQ;   // Analog servos run at ~60 Hz updates
-  Serial.print(pulselength); Serial.println(" us per period"); 
-  pulselength /= 4096;  // 12 bits of resolution
-  Serial.print(pulselength); Serial.println(" us per bit"); 
-  pulse *= 1000000;  // convert input seconds to us
-  pulse /= pulselength;
-  Serial.println(pulse);
-  pwm.setPWM(n, 0, pulse);
 }
 
 // Function to set servo angle
@@ -70,12 +58,12 @@ void setServoAngle(uint8_t channel, uint8_t angle) {
 }
 
 // Function to sweep the servo
-void sweepServo() {
+void sweepServo(int servoChannel) {
   Serial.println("Moving servo from 0 to 180 degrees");
   
   // Move from 0 to 180 degrees
   for (int angle = 0; angle <= 180; angle++) {
-    setServoPulse(SERVO_CHANNEL, angle);
+    setServoAngle(servoChannel, angle);
     delay(15);
   }
   
@@ -85,7 +73,7 @@ void sweepServo() {
   
   // Move from 180 to 0 degrees
   for (int angle = 180; angle >= 0; angle--) {
-    setServoPulse(SERVO_CHANNEL, angle);
+    setServoAngle(servoChannel, angle);
     delay(15);
   }
   
