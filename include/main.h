@@ -10,3 +10,4 @@
 #include "TaskPrint.h"
 #include "TaskTest.h"
 #include "TaskServo.h"
+#include "TaskServoPCA.h"
