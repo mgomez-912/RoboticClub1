@@ -11,7 +11,7 @@ void myTask(void *pvParameters)
 void setup()
 {
     Serial.begin(115200);
-    initializeUART(); 
+    // initializeUART(); 
 
     // Configure the task to run on Core 0
     // task.taskCreation(Function, Name, Size, sleepTime, priority (0-5), core);
@@ -23,9 +23,10 @@ void setup()
     // taskManager.taskCreation(myTask, "Core1_Task", 1024, 500, 1, 1); // Task created on main.cpp
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 
     // taskServoPCA.taskCreation(ServoPCA, "Core0_sweepServo", 2048, 100, 2, 1);
+    // taskLineFollow.taskCreation(LineFollow,"Core1_Line",2048,50,4,1);
 }
 
 void loop()
 {
-    readUART();
+    // readUART();
 }

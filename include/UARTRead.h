@@ -16,7 +16,6 @@ struct DetectionData {
 };
 #pragma pack(pop)
 
-extern HardwareSerial SerialPort;
 extern DetectionData detection;
 
 void initializeUART();

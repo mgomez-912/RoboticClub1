@@ -10,5 +10,6 @@ extern TaskManager taskPrint;
 extern TaskManager taskTesting;
 extern TaskManager taskServot1;
 extern TaskManager taskServoPCA;
+extern TaskManager taskLineFollow;
 
 #endif
