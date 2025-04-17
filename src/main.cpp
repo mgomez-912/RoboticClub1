@@ -23,7 +23,7 @@ void setup()
     // taskManager.taskCreation(myTask, "Core1_Task", 1024, 500, 1, 1); // Task created on main.cpp
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 
     // taskServoPCA.taskCreation(ServoPCA, "Core0_sweepServo", 2048, 100, 2, 1);
-    // taskLineFollow.taskCreation(LineFollow,"Core1_Line",2048,50,4,1);
+    taskLineFollow.taskCreation(LineFollow,"Core1_Line",2048,10,4,1);
 }
 
 void loop()
