@@ -10,7 +10,7 @@ MotorState motors[4] = {
 void MotorDriving(void *pvParameters) {
     // setupAuxMotor();
     while(true) {
-        // Read channels with CORRECT inversion
+        // Read channels with CORRECT inversion, this is used in RF control
         int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
         int strafe = scaleChannel(channelValues[0], false);     // Dont Invert rotation (strafe and rotation are changed)
         int rotation = scaleChannel(channelValues[3], true);   // Invert strafe

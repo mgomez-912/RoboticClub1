@@ -7,37 +7,13 @@ int targetSpeed = 0;
 
 void PWMExtender(void *pvParameters) {
     initializeServo(4);
-    // initializeServo(5);
+    initializeServo(5);
 
     while(true) {
       // Sweep the servo back and forth
         // Serial.println("Sweeping servo...");
         // sweepServo(4);
         // sweepServo(5);
-
-      // if(channelValues[SAFETY_CHANNEL] <= 1500) {
-      //   targetSpeed = 0;
-      //   currentSpeed = 0;
-      //   pwm.setPWM(MOTOR_CHANNEL, 0, 0);
-      //   vTaskDelay(taskPWMExt.getIntervalms() / portTICK_PERIOD_MS);
-      //   continue;
-      // }
-
-      // Map control channel to target speed (1000-2000 → 0-4095)
-     targetSpeed = map(channelValues[CONTROL_CHANNEL], 1000, 2000,
-      0, 4095);
-
-      // Ramping logic
-      if(targetSpeed > currentSpeed) {
-      currentSpeed = min(currentSpeed + RAMP_STEP, targetSpeed);
-      } 
-      else if(targetSpeed < currentSpeed) {
-      currentSpeed = max(currentSpeed - RAMP_STEP, 0);
-      }
-
-      // Apply to motor
-      int pulse = pulseWidth(currentSpeed);
-      pwm.setPWM(MOTOR_CHANNEL, 0, pulse);
         
       vTaskDelay(taskPWMExt.getIntervalms() / portTICK_PERIOD_MS);  // Delay for the blink time
     }
@@ -50,7 +26,7 @@ void initializeServo(int servoChannel) {
   Serial.begin(115200);
   while(!Serial); // Wait for serial monitor in debug mode
 
-  Serial.printf("Using I2C pins: SDA=%d, SCL=%d\n", SDA_PIN, SCL_PIN);
+  // Serial.printf("Using I2C pins: SDA=%d, SCL=%d\n", SDA_PIN, SCL_PIN);
 
   Wire.begin(SDA_PIN, SCL_PIN);
   if(!pwm.begin()) {
@@ -59,7 +35,7 @@ void initializeServo(int servoChannel) {
   }
   
   pwm.setOscillatorFrequency(27000000);
-  pwm.setPWMFreq(500);
+  pwm.setPWMFreq(SERVO_FREQ);
   Serial.printf("PCA9685 initialized at %dHz\n", SERVO_FREQ);
   
   // Test communication
@@ -79,7 +55,7 @@ void setServoAngle(uint8_t channel, uint8_t angle) {
   pwm.setPWM(channel, 0, pulse);
   
   // Optional: Print debug info
-  Serial.printf("Channel %d set to %d degrees (pulse: %d)\n", channel, angle, pulse);
+  // Serial.printf("Channel %d set to %d degrees (pulse: %d)\n", channel, angle, pulse);
 }
 
 // Function to sweep the servo
@@ -103,9 +79,4 @@ void sweepServo(int servoChannel) {
   }
   
   delay(500);
-}
-
-int pulseWidth(int speed) {
-  // Convert speed (1000-2000µs) to PCA9685 compatible value
-  return map(speed, 1000, 2000, 0, 600);
 }
