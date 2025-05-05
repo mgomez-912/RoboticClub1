@@ -8,6 +8,7 @@ MotorState motors[4] = {
 };
 
 void MotorDriving(void *pvParameters) {
+    // setupAuxMotor();
     while(true) {
         // Read channels with CORRECT inversion
         int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
@@ -32,6 +33,9 @@ void MotorDriving(void *pvParameters) {
             motors[i].targetSpeed = constrain(motors[i].targetSpeed, -speedlim, speedlim);
             updateMotor(motors[i]);
         }
+
+        // // Add intake motor
+        // updateAuxMotor();
 
         vTaskDelay(taskMotorDriving.getIntervalms() / portTICK_PERIOD_MS);
     }
@@ -99,4 +103,70 @@ void stopMotors() {
         analogWrite(motors[i].forwardPin, 0);
         analogWrite(motors[i].reversePin, 0);
     }
+}
+
+
+//////////////////////////////////////////////////
+volatile uint8_t auxDuty = 0;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+// Hardware Timer (using hw_timer_t from Arduino-ESP32 core)
+hw_timer_t *timer = NULL;
+
+void IRAM_ATTR auxPWMUpdate() {
+  static bool level = false;
+  static uint8_t currentDuty = 0;
+  
+  portENTER_CRITICAL_ISR(&timerMux);
+  uint8_t target = auxDuty;
+  portEXIT_CRITICAL_ISR(&timerMux);
+
+  if(target > 0) {
+    if(level) {
+      digitalWrite(AUX_PIN, LOW);
+      timerAlarmWrite(timer, (255 - target) * 40, true);
+    } else {
+      digitalWrite(AUX_PIN, HIGH);
+      timerAlarmWrite(timer, target * 40, true);
+    }
+    level = !level;
+  } else {
+    digitalWrite(AUX_PIN, LOW);
+  }
+}
+
+void setupAuxMotor() {
+  pinMode(AUX_PIN, OUTPUT);
+  
+  timer = timerBegin(0, 80, true);  // 1MHz clock (80MHz/80)
+  timerAttachInterrupt(timer, &auxPWMUpdate, true);
+  timerAlarmWrite(timer, 10000, true);  // 100Hz base frequency
+  timerAlarmEnable(timer);
+}
+
+void updateAuxMotor() {
+  static uint8_t targetDuty = 0;
+  const uint8_t rampStep = 3;
+  
+  // Safety check
+  if(channelValues[4] <= 1500) {
+    portENTER_CRITICAL(&timerMux);
+    auxDuty = 0;
+    portEXIT_CRITICAL(&timerMux);
+    return;
+  }
+
+  // Scale input
+  uint8_t newTarget = map(constrain(channelValues[2], 1000, 2000), 1000, 2000, 0, 255);
+
+  // Ramping
+  if(newTarget > targetDuty) {
+    targetDuty = (uint8_t)min((int)targetDuty + rampStep, (int)newTarget);
+  } else if(newTarget < targetDuty) {
+    targetDuty = (uint8_t)max((int)targetDuty - (rampStep * 2), 0);
+  }
+
+  portENTER_CRITICAL(&timerMux);
+  auxDuty = targetDuty;
+  portEXIT_CRITICAL(&timerMux);
 }

@@ -1,26 +1,111 @@
 #include "PWMExtender.h"
 
-void PWMExtender(int Channel, int val){
-// void PWMExtender(void *pvParamenters){
-    Adafruit_PWMServoDriver drivePWM = Adafruit_PWMServoDriver(0x40);
-    Wire.begin(17,18);                          //SDA,SCL
-    drivePWM.begin();  
-    drivePWM.setPWMFreq(FREQUENCY); //PWM freq 50Hz or T=16,66ms
+// Initialize the PWM driver
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+int currentSpeed = 0;
+int targetSpeed = 0;
 
-    // while(true){
-    //     drivePWM.setPWM(0, 0, pulseWidth(channelValues[1]));
-    //     drivePWM.setPWM(1, 0, pulseWidth(channelValues[2])); 
-    //     Serial.println(channelValues[1]);
+void PWMExtender(void *pvParameters) {
+    initializeServo(4);
+    // initializeServo(5);
+
+    while(true) {
+      // Sweep the servo back and forth
+        // Serial.println("Sweeping servo...");
+        // sweepServo(4);
+        // sweepServo(5);
+
+      // if(channelValues[SAFETY_CHANNEL] <= 1500) {
+      //   targetSpeed = 0;
+      //   currentSpeed = 0;
+      //   pwm.setPWM(MOTOR_CHANNEL, 0, 0);
+      //   vTaskDelay(taskPWMExt.getIntervalms() / portTICK_PERIOD_MS);
+      //   continue;
+      // }
+
+      // Map control channel to target speed (1000-2000 → 0-4095)
+     targetSpeed = map(channelValues[CONTROL_CHANNEL], 1000, 2000,
+      0, 4095);
+
+      // Ramping logic
+      if(targetSpeed > currentSpeed) {
+      currentSpeed = min(currentSpeed + RAMP_STEP, targetSpeed);
+      } 
+      else if(targetSpeed < currentSpeed) {
+      currentSpeed = max(currentSpeed - RAMP_STEP, 0);
+      }
+
+      // Apply to motor
+      int pulse = pulseWidth(currentSpeed);
+      pwm.setPWM(MOTOR_CHANNEL, 0, pulse);
         
-    //     vTaskDelay(taskPWMExt.getIntervalms() / portTICK_PERIOD_MS);
-    // }
-    drivePWM.setPWM(Channel, 0, pulseWidth(val));
+      vTaskDelay(taskPWMExt.getIntervalms() / portTICK_PERIOD_MS);  // Delay for the blink time
+    }
+
 }
 
-int pulseWidth(int angle){
-  int pulse_wide, analog_value;
-  pulse_wide = map(angle, 1000, 2000, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-  analog_value = int(float(pulse_wide) / 1000000 * FREQUENCY * 4096);
-  //Serial.println(analog_value);
-  return analog_value;
+// Function to initialize the PCA9685
+// In TaskServoPCA.cpp - modify initializeServo()
+void initializeServo(int servoChannel) {
+  Serial.begin(115200);
+  while(!Serial); // Wait for serial monitor in debug mode
+
+  Serial.printf("Using I2C pins: SDA=%d, SCL=%d\n", SDA_PIN, SCL_PIN);
+
+  Wire.begin(SDA_PIN, SCL_PIN);
+  if(!pwm.begin()) {
+    Serial.println("PCA9685 not found!");
+    while(1); // Halt if initialization fails
+  }
+  
+  pwm.setOscillatorFrequency(27000000);
+  pwm.setPWMFreq(500);
+  Serial.printf("PCA9685 initialized at %dHz\n", SERVO_FREQ);
+  
+  // Test communication
+  pwm.setPWM(servoChannel, 0, 0); // Start with servo off
+  delay(1000);
+}
+
+// Function to set servo angle
+void setServoAngle(uint8_t channel, uint8_t angle) {
+  // Constrain angle to 0-180 degrees
+  angle = constrain(angle, 0, 180);
+  
+  // Map angle to pulse width
+  uint16_t pulse = map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
+  
+  // Set PWM
+  pwm.setPWM(channel, 0, pulse);
+  
+  // Optional: Print debug info
+  Serial.printf("Channel %d set to %d degrees (pulse: %d)\n", channel, angle, pulse);
+}
+
+// Function to sweep the servo
+void sweepServo(int servoChannel) {
+  Serial.println("Moving servo from 0 to 180 degrees");
+  
+  // Move from 0 to 180 degrees
+  for (int angle = 0; angle <= 180; angle++) {
+    setServoAngle(servoChannel, angle);
+    delay(15);
+  }
+  
+  delay(500);
+  
+  Serial.println("Moving servo from 180 to 0 degrees");
+  
+  // Move from 180 to 0 degrees
+  for (int angle = 180; angle >= 0; angle--) {
+    setServoAngle(servoChannel, angle);
+    delay(15);
+  }
+  
+  delay(500);
+}
+
+int pulseWidth(int speed) {
+  // Convert speed (1000-2000µs) to PCA9685 compatible value
+  return map(speed, 1000, 2000, 0, 600);
 }
