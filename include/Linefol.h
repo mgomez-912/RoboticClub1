@@ -35,6 +35,7 @@ extern const int outputLimit;
 
 //////////////////////////////////////
 enum IntersectionPhase { NONE, SLIDE, ROTATE, DONE };
+extern bool actionDone;
 
 //Functions
 void LineFollow(void *pvParameters);
@@ -43,6 +44,9 @@ int calculatePosition(uint8_t status);
 void sendRequest();
 void initPIDController();
 void actionsPID(int status);
+
+void brakeCorrection (int time, int correctionMag);
+void interRotation (int time, int rotationMag, bool dir);
 
 
 #endif

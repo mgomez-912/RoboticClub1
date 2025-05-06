@@ -28,6 +28,10 @@ void MotorDriving(void *pvParameters) {
         // calculateMotors(throttle,strafe,rotation);
 
         // Get PID-computed rotation
+        if(!actionDone){
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            continue;
+        }
         float rotation;
         portENTER_CRITICAL(&pidMux);
         rotation = rotationOutput; 

@@ -4,8 +4,8 @@
 
 // FreeRTOS timing constants
 static TickType_t xLastRequestTime = 0;
-const TickType_t xResponseTimeout = pdMS_TO_TICKS(15);    //keep it bigger than taskLineFollow.getIntervalms()
-const TickType_t xRequestInterval = pdMS_TO_TICKS(30);   //For these example i used *5 and *10 respectively
+const TickType_t xResponseTimeout = pdMS_TO_TICKS(20);    //keep it bigger than taskLineFollow.getIntervalms()
+const TickType_t xRequestInterval = pdMS_TO_TICKS(20);   //For these example i used *5 and *10 respectively
 
 HardwareSerial SerialLine(1);
 uint8_t line_data[3];
@@ -26,6 +26,7 @@ QuickPID linePID(&linePosition, &rotationOutput, &setpoint);
 static TickType_t now = 0;
 static TickType_t slideTime = 0;
 static TickType_t rotationTime = 0;
+bool actionDone = true;
 
 void LineFollow(void *pvParameters) {
     SerialLine.begin(9600, SERIAL_8N1, lineRX, lineTX); // Fixed baud rate to 9600 for this model
@@ -68,28 +69,30 @@ int calculatePosition(uint8_t status) {
 
   position = (sum / count) * 1000;
 
-  if(count == 0){
-    statusLine = 1;            // Handle no line detected (turn right possibly)
-    lost_count ++;
-    return position = 3500;
-  } 
-  else if(count >= 5) {
-    statusLine = 2;                         // Handle intersection
-    // inter_count ++;
-
-    if (!inIntersection) {
-      inter_count++;
-      inIntersection = true;
+  if(actionDone){
+    if(count == 0){
+      statusLine = 1;            // Handle no line detected (turn right possibly)
+      lost_count ++;
+      return position = 3500;
     }
-    else {
-      inIntersection = false;
+    else if(count >= 5) {
+      statusLine = 2;                         // Handle intersection
+  
+      if (!inIntersection) {
+        inter_count++;
+        inIntersection = true;
+      }
+      else {
+        inIntersection = false;
+      }
+    }
+    else{
+      statusLine=0;                           // Normal situation compute PID
+      lost_count = 0;
     }
   }
-  else{
-    statusLine=0;                           // Normal situation compute PID
-    lost_count = 0;
-  }
-  Serial.println(inter_count);                    
+  
+  // Serial.println(inter_count);                    
 
   // Return scaled position 0-7000
   return position;
@@ -138,6 +141,7 @@ void actionsPID(int status){      //Navigation function
   switch (status)
   {
   case 0:                         //Following line, normal scenario
+  // Serial.println("Case0");
     //////////////////// PID 
     portENTER_CRITICAL(&pidMux);
     linePID.SetTunings(Kp, Ki, Kd);
@@ -147,6 +151,7 @@ void actionsPID(int status){      //Navigation function
     break;
   
   case 1:                         //Handle no line scenario
+  // Serial.println("Case1");
     portENTER_CRITICAL(&pidMux);
     // linePID.SetTunings(Kp_lost,Ki_lost,Kd_lost);
     linePID.Compute();
@@ -155,10 +160,15 @@ void actionsPID(int status){      //Navigation function
     break;
 
   case 2:                         //Handle intersection scenario
+  Serial.println(inter_count);
     if(inter_count == 3){
-      inter_count = 0;
+      actionDone=false;
+      // brakeCorrection(1000, 50);
+      interRotation(500,50,1);
+      if(actionDone) {
+        inter_count = 0;
+      }
     }
-
     break;
   
   default:
@@ -167,10 +177,50 @@ void actionsPID(int status){      //Navigation function
 
 }
 
-void brakeCorrection (int time, int correctionMag){
-  TickType_t now = xTaskGetTickCount();
-      if (now - slideTime >= pdMS_TO_TICKS(time)) {
-        slideTime=now;
-      }
+void brakeCorrection(int time, int correctionMag) {
+  // these static locals keep state between calls
+  static TickType_t  startTick = 0;
+  static bool        braking   = false;
 
+  TickType_t now = xTaskGetTickCount();
+
+  if (!braking) {
+      // --- start the braking interval ---
+      startTick  = now;
+      braking    = true;
+      actionDone = false;
+  }
+
+  // --- actively keep braking until time elapses ---
+  if (braking) {
+      calculateMotors(-correctionMag, 0, 0);
+
+      if ((now - startTick) >= pdMS_TO_TICKS(time)) {
+          // --- done ---
+          braking    = false;
+          actionDone = true;
+      }
+  }
+}
+
+void interRotation (int time, int rotationMag, bool dir){
+  // these static locals keep state between calls
+  static TickType_t  startTick = 0;
+  static bool        rotating   = false;
+
+  TickType_t now = xTaskGetTickCount();
+
+  if (!rotating) {
+    startTick  = now;
+    rotating    = true;
+    actionDone = false;
+  }
+  if (rotating) {
+    calculateMotors(0, 0, rotationMag * (dir?1:-1)); // try speedlim/2 in throttle
+  
+    if ((now - startTick) >= pdMS_TO_TICKS(time)) {
+        rotating    = false;
+        actionDone = true;
+    }
+  }
 }
