@@ -5,17 +5,6 @@
 #include "GlobalVariables.h"
 #include <driver/timer.h>
 
-// Motor control pins
-// const int M1_Forward = 4;
-// const int M1_Reverse = 5;
-// const int M3_Forward = 6;
-// const int M3_Reverse = 7;
-
-// const int M2_Forward = 35;
-// const int M2_Reverse = 36;
-// const int M4_Forward = 37;
-// const int M4_Reverse = 38;
-
 //version bjgala
 const int M1_Forward = 35;
 const int M1_Reverse = 36;
@@ -27,11 +16,6 @@ const int M2_Reverse = 5;
 const int M4_Forward = 6;
 const int M4_Reverse = 7;
 
-////////////////////////////////////////
-// const int M5_Intake = 41;
-#define AUX_PIN 41
-////////////////////////////////////////
-
 // Motor State Structure
 struct MotorState {
     bool currentDir;    // Current direction (true = forward)
@@ -41,11 +25,9 @@ struct MotorState {
     int reversePin;
 };
 extern MotorState motors[4];
-extern MotorState auxMotor;
-
 
 const int motorProt = 50;  // Default protection time for motor direction change
-const int speedlim = 75;   // Maximum input for the motor driver (0 - 255)
+const int speedlim = 55;   // Maximum input for the motor driver (0 - 255)
 
 // Channel values
 const int minres = 980;
@@ -65,8 +47,6 @@ int scaleChannel(int channelValue, bool invert);
 void stopMotors();
 void updateMotor(MotorState& m);  // Keep reference symbol (&) attached to type
 
-void updateAuxMotor();
-void setupAuxMotor();
 // int calculateRampStep(int prevTarget, int currentTarget);
 void calculateMotors(int throttle, int strafe, int rotation);
 
