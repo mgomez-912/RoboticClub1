@@ -171,7 +171,6 @@ void brakeCorrection (int time, int correctionMag){
   TickType_t now = xTaskGetTickCount();
       if (now - slideTime >= pdMS_TO_TICKS(time)) {
         slideTime=now;
-        motor
       }
 
 }
