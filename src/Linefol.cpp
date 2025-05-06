@@ -1,3 +1,4 @@
+
 #include "LineFol.h"
 
 // FreeRTOS timing constants
@@ -7,16 +8,31 @@ const TickType_t xRequestInterval = pdMS_TO_TICKS(100);   //For these example i 
 
 HardwareSerial SerialLine(1);
 uint8_t Patrol_data[3];
+int position = 3500;
+
+//////////////////////////////////////////
+// PID Variables
+float linePosition;
+float rotationOutput = 0.0;
+float setpoint = 3500.0;  // Center position
+QuickPID linePID(&linePosition, &rotationOutput, &setpoint);
 
 void LineFollow(void *pvParameters) {
     SerialLine.begin(9600, SERIAL_8N1, lineRX, lineTX); // Fixed baud rate to 9600 for this model
     Serial.begin(115200);
     Serial.println("Sensor Monitoring Started");
     
+    initPIDController();
     sendRequest();      // Initial request
 
     while(true) {
         processSensorData();
+
+        // PID Update
+        portENTER_CRITICAL(&pidMux);
+        linePID.Compute();
+        portEXIT_CRITICAL(&pidMux);
+
         vTaskDelay(taskLineFollow.getIntervalms() / portTICK_PERIOD_MS);
     }
 }
@@ -44,14 +60,22 @@ int calculatePosition(uint8_t status) {
     }
   }
 
-  // Handle no line detected (turn right)
-  if(count == 0) return 1;
+  position = (sum / count) * 1000;
 
-  //Handle intersection
-  if(count == 8) return 2; 
+  if(count == 0){
+    statusLine = 1;            // Handle no line detected (turn right)
+    position = 3500;
+    actionsPID(0);
+    return position = 3500;
+  } 
+  else if(count == 8) statusLine = 2;       // Handle intersection
+  else{
+    statusLine=0;                           // Normal situation compute PID
+    actionsPID(statusLine);
+  }                    
 
   // Return scaled position 0-7000
-  return (sum / count) * 1000;
+  return position;
 }
 
 void processSensorData() {
@@ -71,17 +95,41 @@ void processSensorData() {
         Patrol_data[2] = SerialLine.read();
 
         // Process data
-        int position = calculatePosition(Patrol_data[0]);
+        calculatePosition(Patrol_data[0]);
         
         // Debug output (consider moving to separate task)
-        Serial.print("Status: 0b");
-        for(int i=7; i>=0; i--) Serial.print((Patrol_data[0] >> i) & 0x01);
-        Serial.print(" | Position: ");
-        Serial.println(position);
+        // Serial.print("Status: 0b");
+        // for(int i=7; i>=0; i--) Serial.print((Patrol_data[0] >> i) & 0x01);
+        // Serial.print(" | Position: ");
+        // Serial.println(position);
 
         // Rate-limited requests
         if((xTaskGetTickCount() - xLastRequestTime) >= xRequestInterval) {
             sendRequest();
         }
     }
+}
+
+///////////////////////////////////////////
+void initPIDController() {
+    linePID.SetTunings(Kp, Ki, Kd);
+    linePID.SetMode(linePID.Control::automatic);
+    linePID.SetOutputLimits(-outputLimit, outputLimit);
+  }
+
+void actionsPID(int status){
+  switch (status)
+  {
+  case 0:
+    //////////////////// PID 
+    portENTER_CRITICAL(&pidMux);
+    linePosition = position;
+    portEXIT_CRITICAL(&pidMux);
+    ////////////////////
+    break;
+  
+  default:
+    break;
+  }
+
 }

@@ -1,4 +1,5 @@
 #include "DriveMotor.h"
+#include "LineFol.h"
 
 MotorState motors[4] = {
     {true, 0, 0, M1_Forward, M1_Reverse},  // M1: Front-Right
@@ -8,34 +9,46 @@ MotorState motors[4] = {
 };
 
 void MotorDriving(void *pvParameters) {
+    stopMotors();
     // setupAuxMotor();
     while(true) {
-        // Read channels with CORRECT inversion, this is used in RF control
-        int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
-        int strafe = scaleChannel(channelValues[0], false);     // Dont Invert rotation (strafe and rotation are changed)
-        int rotation = scaleChannel(channelValues[3], true);   // Invert strafe
+        // // Read channels with CORRECT inversion, this is used in RF control
+        // int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
+        // int strafe = scaleChannel(channelValues[3], true);     // Dont Invert rotation
+        // int rotation = scaleChannel(channelValues[0], false);   // Invert strafe
 
-        // Immediate stop detection
-        if(abs(throttle) + abs(strafe) + abs(rotation) < stopThreshold) {
+        // // Immediate stop detection
+        // if(abs(throttle) + abs(strafe) + abs(rotation) < stopThreshold) {
+        //     stopMotors();
+        //     vTaskDelay(10 / portTICK_PERIOD_MS);
+        //     continue;
+        // }
+        // calculateMotors(throttle,strafe,rotation);
+
+        // // Add intake motor
+        // updateAuxMotor();
+
+        // Get PID-computed rotation
+        float rotation;
+        portENTER_CRITICAL(&pidMux);
+        rotation = rotationOutput; 
+        portEXIT_CRITICAL(&pidMux);
+        // Serial.println("rotation: ");
+        // Serial.print(rotation);
+
+        // Dynamic throttle calculation
+        int throttle = speedlim - abs(rotation); // Reserve rotation space
+
+        // Calculate motor outputs
+        if(statusLine == 1){
             stopMotors();
             vTaskDelay(10 / portTICK_PERIOD_MS);
             continue;
         }
-
-        // Mecanum calculations (keep original signs)
-        motors[0].targetSpeed = throttle + strafe + rotation;  // FR
-        motors[1].targetSpeed = throttle - strafe + rotation;  // FL
-        motors[2].targetSpeed = throttle + strafe - rotation;  // RR
-        motors[3].targetSpeed = throttle - strafe - rotation;  // RL
-
-        // Constrain and update motors
-        for(int i=0; i<4; i++) {
-            motors[i].targetSpeed = constrain(motors[i].targetSpeed, -speedlim, speedlim);
-            updateMotor(motors[i]);
+        else{
+            
+            calculateMotors(throttle, 0, rotation); // strafe=0
         }
-
-        // // Add intake motor
-        // updateAuxMotor();
 
         vTaskDelay(taskMotorDriving.getIntervalms() / portTICK_PERIOD_MS);
     }
@@ -96,6 +109,21 @@ void updateMotor(MotorState &m) {
     analogWrite((m.currentDir ? m.reversePin : m.forwardPin), 0);
 }
 
+void calculateMotors(int throttle, int strafe, int rotation) {
+  // Mecanum calculations (keep original signs)
+  motors[0].targetSpeed = throttle + strafe + rotation;  // FR
+  motors[1].targetSpeed = throttle + strafe - rotation;  // FL
+  motors[2].targetSpeed = throttle - strafe + rotation;  // RR
+  motors[3].targetSpeed = throttle - strafe - rotation;  // RL
+  Serial.println(motors[0].targetSpeed);
+
+  // Constrain and update to motors
+  for(int i = 0; i < 4; i++) {
+    motors[i].targetSpeed = constrain(motors[i].targetSpeed, -255, 255);
+    updateMotor(motors[i]);
+  }
+}
+
 void stopMotors() {
     for(int i=0; i<4; i++) {
         motors[i].targetSpeed = 0;
@@ -107,66 +135,66 @@ void stopMotors() {
 
 
 //////////////////////////////////////////////////
-volatile uint8_t auxDuty = 0;
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+// volatile uint8_t auxDuty = 0;
+// portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-// Hardware Timer (using hw_timer_t from Arduino-ESP32 core)
-hw_timer_t *timer = NULL;
+// // Hardware Timer (using hw_timer_t from Arduino-ESP32 core)
+// hw_timer_t *timer = NULL;
 
-void IRAM_ATTR auxPWMUpdate() {
-  static bool level = false;
-  static uint8_t currentDuty = 0;
+// void IRAM_ATTR auxPWMUpdate() {
+//   static bool level = false;
+//   static uint8_t currentDuty = 0;
   
-  portENTER_CRITICAL_ISR(&timerMux);
-  uint8_t target = auxDuty;
-  portEXIT_CRITICAL_ISR(&timerMux);
+//   portENTER_CRITICAL_ISR(&timerMux);
+//   uint8_t target = auxDuty;
+//   portEXIT_CRITICAL_ISR(&timerMux);
 
-  if(target > 0) {
-    if(level) {
-      digitalWrite(AUX_PIN, LOW);
-      timerAlarmWrite(timer, (255 - target) * 40, true);
-    } else {
-      digitalWrite(AUX_PIN, HIGH);
-      timerAlarmWrite(timer, target * 40, true);
-    }
-    level = !level;
-  } else {
-    digitalWrite(AUX_PIN, LOW);
-  }
-}
+//   if(target > 0) {
+//     if(level) {
+//       digitalWrite(AUX_PIN, LOW);
+//       timerAlarmWrite(timer, (255 - target) * 40, true);
+//     } else {
+//       digitalWrite(AUX_PIN, HIGH);
+//       timerAlarmWrite(timer, target * 40, true);
+//     }
+//     level = !level;
+//   } else {
+//     digitalWrite(AUX_PIN, LOW);
+//   }
+// }
 
-void setupAuxMotor() {
-  pinMode(AUX_PIN, OUTPUT);
+// void setupAuxMotor() {
+//   pinMode(AUX_PIN, OUTPUT);
   
-  timer = timerBegin(0, 80, true);  // 1MHz clock (80MHz/80)
-  timerAttachInterrupt(timer, &auxPWMUpdate, true);
-  timerAlarmWrite(timer, 10000, true);  // 100Hz base frequency
-  timerAlarmEnable(timer);
-}
+//   timer = timerBegin(0, 80, true);  // 1MHz clock (80MHz/80)
+//   timerAttachInterrupt(timer, &auxPWMUpdate, true);
+//   timerAlarmWrite(timer, 10000, true);  // 100Hz base frequency
+//   timerAlarmEnable(timer);
+// }
 
-void updateAuxMotor() {
-  static uint8_t targetDuty = 0;
-  const uint8_t rampStep = 3;
+// void updateAuxMotor() {
+//   static uint8_t targetDuty = 0;
+//   const uint8_t rampStep = 3;
   
-  // Safety check
-  if(channelValues[4] <= 1500) {
-    portENTER_CRITICAL(&timerMux);
-    auxDuty = 0;
-    portEXIT_CRITICAL(&timerMux);
-    return;
-  }
+//   // Safety check
+//   if(channelValues[4] <= 1500) {
+//     portENTER_CRITICAL(&timerMux);
+//     auxDuty = 0;
+//     portEXIT_CRITICAL(&timerMux);
+//     return;
+//   }
 
-  // Scale input
-  uint8_t newTarget = map(constrain(channelValues[2], 1000, 2000), 1000, 2000, 0, 255);
+//   // Scale input
+//   uint8_t newTarget = map(constrain(channelValues[2], 1000, 2000), 1000, 2000, 0, 255);
 
-  // Ramping
-  if(newTarget > targetDuty) {
-    targetDuty = (uint8_t)min((int)targetDuty + rampStep, (int)newTarget);
-  } else if(newTarget < targetDuty) {
-    targetDuty = (uint8_t)max((int)targetDuty - (rampStep * 2), 0);
-  }
+//   // Ramping
+//   if(newTarget > targetDuty) {
+//     targetDuty = (uint8_t)min((int)targetDuty + rampStep, (int)newTarget);
+//   } else if(newTarget < targetDuty) {
+//     targetDuty = (uint8_t)max((int)targetDuty - (rampStep * 2), 0);
+//   }
 
-  portENTER_CRITICAL(&timerMux);
-  auxDuty = targetDuty;
-  portEXIT_CRITICAL(&timerMux);
-}
+//   portENTER_CRITICAL(&timerMux);
+//   auxDuty = targetDuty;
+//   portEXIT_CRITICAL(&timerMux);
+// }

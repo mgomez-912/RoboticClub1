@@ -16,4 +16,10 @@ extern TaskManager taskLineFollow;
 extern const int NUM_CHANNELS;                                 // Number of channels to read
 extern volatile unsigned int channelValues[];                  // Array to store channel values
 
+// Mutex for thread-safe access
+extern portMUX_TYPE pidMux;
+
+//Status Line follower to handle cases
+extern int statusLine;
+
 #endif

@@ -45,7 +45,7 @@ extern MotorState auxMotor;
 
 
 const int motorProt = 50;  // Default protection time for motor direction change
-const int speedlim = 150;   // Maximum input for the motor driver (0 - 255)
+const int speedlim = 75;   // Maximum input for the motor driver (0 - 255)
 
 // Channel values
 const int minres = 980;
@@ -68,5 +68,6 @@ void updateMotor(MotorState& m);  // Keep reference symbol (&) attached to type
 void updateAuxMotor();
 void setupAuxMotor();
 // int calculateRampStep(int prevTarget, int currentTarget);
+void calculateMotors(int throttle, int strafe, int rotation);
 
 #endif
