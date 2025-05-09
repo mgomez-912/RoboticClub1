@@ -1,5 +1,6 @@
 #include "DriveMotor.h"
 #include "LineFol.h"
+#include "LinePosition.h"
 
 MotorState motors[4] = {
     {true, 0, 0, M1_Forward, M1_Reverse},  // M1: Front-Right
@@ -44,7 +45,7 @@ void MotorDriving(void *pvParameters) {
 
         // Calculate motor outputs
         if(statusLine == 1){    //Handling no line
-            if(lost_count>=15){
+            if(lost_count>=lostCycles){
                 stopMotors();
                 vTaskDelay(10 / portTICK_PERIOD_MS);
                 continue;
