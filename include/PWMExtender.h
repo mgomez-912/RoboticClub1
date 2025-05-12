@@ -22,7 +22,8 @@ extern Adafruit_PWMServoDriver pwm;
 // Function declarations
 void PWMExtender(void *pvParameters); // Task function
 void initializeServo(int);      // Initialize PCA9685
-void sweepServo(int);          // Sweep servo back and forth
+//void sweepServo(int);          // Sweep servo back and forth
 void setServoAngle(uint8_t channel, uint8_t angle); // Set specific angle
+void sweepServoByColor(int servoChannel); // Sweep servo based on color
 
 #endif
