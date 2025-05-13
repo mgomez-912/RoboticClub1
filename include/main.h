@@ -18,3 +18,4 @@
 #include "TaskServo.h"
 #include "LineFol.h"
 #include "ColorSensor.h"
+#include "ConveyorBeltMotor.h"

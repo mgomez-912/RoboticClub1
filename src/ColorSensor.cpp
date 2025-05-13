@@ -14,6 +14,7 @@ void ColorSensor(void *pvParameters) {
     Serial.println("ColorTask started");
 
     // Initialize the sensor
+    Wire.begin(SDA_PIN, SCL_PIN);
     if (!tcs.begin()) {
         Serial.println("Color sensor not found. Halting task.");
         vTaskDelete(NULL); // Stop task if initialization fails
@@ -24,7 +25,7 @@ void ColorSensor(void *pvParameters) {
         uint16_t r, g, b, c;
         tcs.getRawData(&r, &g, &b, &c);
 
-        if (c > 1000 && (b - r - g) > 600) {
+        if (c > 700 && (b - r - g) > 300) {
             detectedColor = "blue";
             Serial.println("BLUE DETECTED");
         } 

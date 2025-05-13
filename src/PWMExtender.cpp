@@ -19,7 +19,6 @@ void PWMExtender(void *pvParameters) {
         
       vTaskDelay(taskPWMExt.getIntervalms() / portTICK_PERIOD_MS);  // Delay for the blink time
     }
-
 }
 
 // Function to initialize the PCA9685
