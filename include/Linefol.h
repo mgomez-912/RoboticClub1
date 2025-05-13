@@ -33,6 +33,7 @@ void actionsPID(int status);
 
 void brakeCorrection (int time, int correctionMag);
 void interRotation (int time, int rotationMag, bool dir);
+void intersection (bool dir);
 
 
 #endif

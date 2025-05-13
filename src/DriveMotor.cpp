@@ -15,46 +15,46 @@ void MotorDriving(void *pvParameters) {
     stopMotors();
 
     while(true) {
-        // // Read channels with CORRECT inversion, this is used in RF control
-        // int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
-        // int strafe = scaleChannel(channelValues[3], true);     // Dont Invert rotation
-        // int rotation = scaleChannel(channelValues[0], false);   // Invert strafe
+        // Read channels with CORRECT inversion, this is used in RF control
+        int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
+        int strafe = scaleChannel(channelValues[3], true);     // Dont Invert rotation
+        int rotation = scaleChannel(channelValues[0], false);   // Invert strafe
 
-        // // Immediate stop detection
-        // if(abs(throttle) + abs(strafe) + abs(rotation) < stopThreshold) {
-        //     stopMotors();
-        //     vTaskDelay(10 / portTICK_PERIOD_MS);
-        //     continue;
-        // }
-        // calculateMotors(throttle,strafe,rotation);
-
-        // Get PID-computed rotation
-        if(!actionDone){
+        // Immediate stop detection
+        if(abs(throttle) + abs(strafe) + abs(rotation) < stopThreshold) {
+            stopMotors();
             vTaskDelay(10 / portTICK_PERIOD_MS);
             continue;
         }
-        float rotation;
-        portENTER_CRITICAL(&pidMux);
-        rotation = rotationOutput; 
-        portEXIT_CRITICAL(&pidMux);
-        // Serial.println("rotation: ");
-        // Serial.print(rotation);
+        calculateMotors(throttle,strafe,rotation);
 
-        // Dynamic throttle calculation
-        int throttle = speedlim - abs(rotation)*0.5; // Reserve rotation space
+        // // Get PID-computed rotation
+        // if(!actionDone){
+        //     vTaskDelay(10 / portTICK_PERIOD_MS);
+        //     continue;
+        // }
+        // float rotation;
+        // portENTER_CRITICAL(&pidMux);
+        // rotation = rotationOutput; 
+        // portEXIT_CRITICAL(&pidMux);
+        // // Serial.println("rotation: ");
+        // // Serial.print(rotation);
 
-        // Calculate motor outputs
-        if(statusLine == 1){    //Handling no line
-            if(lost_count>=lostCycles){
-                stopMotors();
-                vTaskDelay(10 / portTICK_PERIOD_MS);
-                continue;
-            }
-            calculateMotors(throttle, 0, rotation); // strafe=0
-        }
-        else{
-            calculateMotors(throttle, 0, rotation); // strafe=0
-        }
+        // // Dynamic throttle calculation
+        // int throttle = speedlim - abs(rotation)*0.5; // Reserve rotation space
+
+        // // Calculate motor outputs
+        // if(statusLine == 1){    //Handling no line
+        //     if(lost_count>=lostCycles){
+        //         stopMotors();
+        //         vTaskDelay(10 / portTICK_PERIOD_MS);
+        //         continue;
+        //     }
+        //     calculateMotors(throttle, 0, rotation); // strafe=0
+        // }
+        // else{
+        //     calculateMotors(throttle, 0, rotation); // strafe=0
+        // }
 
         vTaskDelay(taskMotorDriving.getIntervalms() / portTICK_PERIOD_MS);
     }

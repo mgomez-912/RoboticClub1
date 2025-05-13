@@ -2,6 +2,9 @@
     "files.associations": {
         "memory": "cpp",
         "istream": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "atomic": "cpp",
+        "fstream": "cpp",
+        "sstream": "cpp"
     }
 }

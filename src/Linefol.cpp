@@ -65,13 +65,7 @@ void actionsPID(int status){      //Navigation function
   case 2:                         //Handle intersection scenario
   // Serial.println(inter_count);
     if(inter_count == 3){
-      actionDone=false;
-      brakeCorrection(225, 65);
-      if(brakeDone) interRotation(950,100,1);
-      // interRotation(750,100,1);
-      if(actionDone) {
-        inter_count = 0;
-      }
+      intersection(1);
     }
     break;
   
@@ -129,4 +123,12 @@ void interRotation (int time, int rotationMag, bool dir){
         actionDone = true;
     }
   }
+}
+
+void intersection (bool dir){
+  actionDone=false;
+      brakeCorrection(225, 65);
+      if(brakeDone) interRotation(950,100,dir);
+      // interRotation(750,100,1);
+      if(actionDone) inter_count = 0;
 }
