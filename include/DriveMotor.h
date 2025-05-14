@@ -27,7 +27,7 @@ struct MotorState {
 extern MotorState motors[4];
 
 const int motorProt = 50;  // Default protection time for motor direction change
-const int speedlim = 150;   // Maximum input for the motor driver (0 - 255) use 50 for lineFOl
+const int speedlim = 125;   // Maximum input for the motor driver (0 - 255) use 50 for lineFOl
 
 // Channel values
 const int minres = 980;

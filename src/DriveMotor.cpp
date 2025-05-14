@@ -15,6 +15,11 @@ void MotorDriving(void *pvParameters) {
     stopMotors();
 
     while(true) {
+        if(channelValues[1]<500){
+            stopMotors();
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            continue;
+        }
         // Read channels with CORRECT inversion, this is used in RF control
         int throttle = scaleChannel(channelValues[1], false);  //  True invert the channel 
         int strafe = scaleChannel(channelValues[3], true);     // Dont Invert rotation

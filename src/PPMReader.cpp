@@ -13,12 +13,12 @@ void RXRead(void *pvParameters) {
     attachInterrupt(digitalPinToInterrupt(PPM_PIN), ppmInterruptHandler, FALLING);
 
     // Print the most recent values for each channel
-    for (int i = 0; i < NUM_CHANNELS; i++) {
+    // for (int i = 0; i < NUM_CHANNELS; i++) {
 
-        Serial.print(channelValues[i]);
-        Serial.print(" \t");
-    }
-    Serial.println();
+    //     Serial.print(channelValues[i]);
+    //     Serial.print(" \t");
+    // }
+    // Serial.println();
     vTaskDelay(taskRXRead.getIntervalms() / portTICK_PERIOD_MS);  // Short delay to limit serial output rate
 }
 

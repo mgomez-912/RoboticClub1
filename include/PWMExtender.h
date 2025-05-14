@@ -19,13 +19,35 @@ extern Adafruit_PWMServoDriver pwm;
 const int SDA_PIN = 40;          // Data pin (SDA)
 const int SCL_PIN = 41;          // Clock pin (SCL)
 
+/////////////////////////////////////////
+enum ArmTarget {
+    NONE,
+    PICKUP_1,
+    PICKUP_2,
+    DELIVERY
+};
+
+const int openClaw = 160;
+const int closedClaw = 100;
+const int front = 65; 
+const int back = 180;
+const int pauseMov = 150;
+
+const int deadBHigh = 1750;
+const int deadBLow = 1250;
+
+
 // Function declarations
 void PWMExtender(void *pvParameters); // Task function
 void initializeServo(int);      // Initialize PCA9685
 
 void setServoAngle(uint8_t channel, uint8_t angle); // Set specific angle
 
-void armPos(int, int, int, int, int, int, int);
+void armPos(int, int, int, int, int, int);
 void inputHandle();
+
+ArmTarget getArmTargetFromSwitches();
+void moveArmSafely(int to[5]);
+void processArmPosition();
 
 #endif
