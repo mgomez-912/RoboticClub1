@@ -1,5 +1,8 @@
 #include "ColorSensor.h"
 
+#include <Wire.h>
+#include <Arduino.h>
+
 // Define the TCS34725 color sensor object
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(
     TCS34725_INTEGRATIONTIME_50MS,
@@ -24,12 +27,12 @@ void ColorSensor(void *pvParameters) {
     while (true) {
         uint16_t r, g, b, c;
         tcs.getRawData(&r, &g, &b, &c);
-
-        if (c > 700 && (b - r - g) > 300) {
+        //Serial.printf("R:%d G:%d B:%d C:%d\n", r, g, b, c);
+        if (c > 400 && (b - r - g) > 150) {
             detectedColor = "blue";
             Serial.println("BLUE DETECTED");
         } 
-        else if (c > 700 && (r - b - g) > 300) {
+        else if (c > 400 && (r - b - g) > 150) {
             detectedColor = "red";
             Serial.println("RED DETECTED");
         } else {

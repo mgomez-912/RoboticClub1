@@ -8,6 +8,8 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <Adafruit_TCS34725.h>
+#include <Adafruit_MCP23017.h>
 
 #include "RGBLed.h"
 #include "TaskManager.h"

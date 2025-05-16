@@ -9,12 +9,12 @@
 
 // }
 
-//MotorController motorController; 
+ConveyorSystem conveyorSystem; 
 
 void setup()
 {
     Serial.begin(115200);
-    //motorController.begin();
+    conveyorSystem.begin();
 
     // Configure the task to run on Core 0
     // task.taskCreation(Function, Name, Size, sleepTime, priority (0-5), core);
@@ -23,18 +23,7 @@ void setup()
     taskPWMExt.taskCreation(PWMExtender,"Core0_PWMExtender",3000,50,3,0); 
     // taskServot1.taskCreation(Servot1, "Core0_sweepServo", 2048, 500, 2, 1);   
     taskColorSensor.taskCreation(ColorSensor, "Core0_ColorSensor",3000,10,3,0);
-    //taskConveyorBeltMotor.taskCreation(MotorController::ConveyorBeltMotor, "Core0_ConveyorBeltMotor", 4096, 50, 3, 0);
-    
-// Create task with explicit parameter
-    //BaseType_t taskCreated = xTaskCreatePinnedToCore(
-        //MotorController::ConveyorBeltMotor,  // Task function
-        //"Core0_ConveyorBeltMotor",                      // Task name
-        //4096,                               // Stack size (increased for safety)
-        //(void*)&motorController,            // Parameter passed to task
-        //3,                                  // Priority
-        //NULL,                               // Task handle
-        //0                                   // Core
-    //);
+    BaseType_t taskCreated = xTaskCreatePinnedToCore(ConveyorSystem::ConveyorBeltMotor,"Core0_ConveyorBeltMotor",4096,(void*)&conveyorSystem,3,NULL,0);
 
     // Configure the task to run on Core 1
     // taskManager.taskCreation(myTask, "Core1_Task", 2048, 500, 3, 1); // Task created on main.cpp
@@ -45,5 +34,10 @@ void setup()
 
 void loop()
 {
+    /* if (conveyorSystem.isSwitchPressed()) {
+        Serial.println("Switch pressed!");
+        delay(200); // Debounce
+    }
+    delay(10); */
     // Nothing in loop, tasks are handled by FreeRTOS
 }

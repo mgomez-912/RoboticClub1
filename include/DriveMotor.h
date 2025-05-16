@@ -28,8 +28,8 @@ const int M4_Forward = 6;
 const int M4_Reverse = 7;
 
 ////////////////////////////////////////
-// const int M5_Intake = 41;
-#define AUX_PIN 41
+// const int M5_Intake = 42;
+#define AUX_PIN 42
 ////////////////////////////////////////
 
 // Motor State Structure

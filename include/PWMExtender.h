@@ -10,7 +10,7 @@
 extern Adafruit_PWMServoDriver pwm;
 
 // Define servo parameters
-#define SERVO_CHANNEL 0     // Channel on PCA9685 (0-15)
+#define SERVO_CHANNEL 5     // Channel on PCA9685 (0-15)
 #define SERVO_MIN 100       // Minimum pulse length count
 #define SERVO_MAX 500      // Maximum pulse length count
 #define SERVO_FREQ 50       // Servo frequency (50 Hz)

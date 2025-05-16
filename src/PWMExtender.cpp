@@ -105,7 +105,7 @@ void sweepServoByColor(int servoChannel) {
   delay(3000);  // Hold position briefly
 
   // Return to neutral
-  Serial.println("Returning to neutral position");
+  /* Serial.println("Returning to neutral position");
   setServoAngle(servoChannel, neutralpos);
-  delay(300);
+  delay(300); */
 }

@@ -4,50 +4,80 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
+//#include <Adafruit_MCP23017.h>
+#include <MCP23017.h>
 
-// Define custom I2C pins for ESP32
-#define SDA_PIN 40          // Data pin (SDA)
-#define SCL_PIN 41          // Clock pin (SCL)
+#define COLLECT_MODE 0
+#define DELIVER_MODE 1
 
-class MotorController {
-public:
-    enum OperationMode { COLLECT_MODE, DELIVER_MODE };
-
-    MotorController();
-    void begin();
-
-    void setMode(OperationMode mode) { currentMode = mode; }
-    bool isBusy() const { return operationInProgress; }
-
-    void executeCollect(String color, int level);
-    void executeDeliver(String color, int level);
-    void stopAll();
-
-    // Task control functions
-    static void ConveyorBeltMotor(void* pvParameters);
-
-private:
-    struct MotorConfig {
-        uint8_t in1;
-        uint8_t in2;
-        int collectSpeed;
-        int deliverSpeed;
-
-        MotorConfig(uint8_t pin1, uint8_t pin2, int cSpeed = 2500, int dSpeed = 3000)
-            : in1(pin1), in2(pin2), collectSpeed(cSpeed), deliverSpeed(dSpeed) {}
-    };
-
-    Adafruit_PWMServoDriver pwm;
-    OperationMode currentMode = COLLECT_MODE;
-    bool operationInProgress = false;
-
-    // Motor configurations (fixed typo in BLUE_MOTOR)
-    const MotorConfig BLUE_MOTOR {1, 2};  // Pin 1 and 2, with default speeds
-    const MotorConfig RED_MOTOR {3, 4};   // Pin 3 and 4, with default speeds
-
-    // Motor control functions
-    void moveMotor(const MotorConfig& motor, int speed);
-    int getDuration(int level, bool isCollect) const;
+struct MotorConfig {
+    uint8_t in1;
+    uint8_t in2;
+    uint16_t collectSpeed;
+    uint16_t deliverSpeed;
 };
 
-#endif // CONVEYOR_BELT_MOTOR_H
+class ConveyorSystem {
+public:
+    ConveyorSystem();
+    void begin();
+    static void ConveyorBeltMotor(void* pvParameters);
+    
+    // Motor control
+    void moveMotor(const MotorConfig& motor, int speed);
+    void stopAll();
+    
+    // Mode control
+    void setMode(uint8_t mode);
+    bool isBusy();
+
+    bool isSwitchPressed(uint8_t switchNumber);
+
+private:
+    // Internal movement methods
+    void startCollectionMovement(String color);
+    void executeDelivery();
+    
+    // Switch handling
+    //bool isSwitchPressed(uint8_t switchNumber);
+    bool isSwitchActiveDebounced(uint8_t switchNumber);
+    bool checkDeliveryCondition();
+    uint8_t getTargetSwitch(String color, uint8_t level);
+    
+    // Helper functions
+    int getDeliveryDuration(uint8_t level);
+
+    // Hardware controllers
+    Adafruit_PWMServoDriver pwm;
+    MCP23017 limitSwitchController;
+    
+    // State variables
+    uint8_t currentMode = COLLECT_MODE;
+    bool operationInProgress = false;
+    bool isMoving = false;
+    String movingColor = "";
+    unsigned long moveStartTime = 0;
+    
+    // Level tracking (0-4)
+    uint8_t blueLevel = 0;
+    uint8_t redLevel = 0;
+    
+    // Motor configurations
+    const MotorConfig BLUE_MOTOR = {0, 1, 4095, 2048};
+    const MotorConfig RED_MOTOR = {3, 2, 4095, 2048};
+    
+    #ifndef SDA_PIN
+        #define SDA_PIN 40   // Default if not defined elsewhere
+    #endif
+  
+    #ifndef SCL_PIN
+        #define SCL_PIN 41   // Default if not defined elsewhere
+    #endif
+    
+    // Switch mappings
+    const uint8_t blueConveyorSwitches[3] = {13, 12, 15};
+    const uint8_t redConveyorSwitches[3] = {0, 1, 2};
+    const uint8_t deliverySwitches[2] = {14, 3};     
+};
+
+#endif
