@@ -10,7 +10,7 @@ TaskManager taskPWMExt;
 TaskManager taskLineFollow;
 TaskManager taskLineSense;
 
-const int NUM_CHANNELS = 8;                                 // Number of channels to read
+const int NUM_CHANNELS = 9;                                 // Number of channels to read
 volatile unsigned int channelValues[NUM_CHANNELS]={0};
 
 // Mutex for thread-safe access

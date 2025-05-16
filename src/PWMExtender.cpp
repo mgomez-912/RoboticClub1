@@ -7,11 +7,10 @@ int prevCh4 = -1;
 int prevCh5 = -1;
 int prevCh6 = -1;
 
-
 /////////////////////////////////////////
 // Storage positions: rotation, angle, shoulder, elbow, wrist
 int storagePos[3][5] = {
-    {130, 90, 70, 95, 135},  // Storage 1
+    {front-5, 105, 155, 130, 135},  // Storage 1
     {150, 85, 75, 90, 130},  // Storage 2
     {170, 80, 80, 85, 125}   // Storage 3
 };
@@ -80,15 +79,20 @@ void setServoAngle(uint8_t channel, uint8_t angle) {
 /////////////////////////////////
 ArmTarget getArmTargetFromSwitches() {
     int ch4 = channelValues[4];
+    int ch5 = channelValues[5];
     int ch6 = channelValues[6];
 
-    if (ch4 > deadBHigh) {
+    if (ch4 > deadBHigh && ch5 < deadBLow) {
         if (ch6 < deadBLow) return PICKUP_2;
         else if (ch6 > deadBHigh) return DELIVERY;
-    } else {
+    } else if (ch4 > deadBHigh && ch5 > deadBHigh) {
+        if (ch6 < deadBLow) return STORAGE;
+        if (ch6 > deadBHigh) return DELIVERY;
+    }else {
         if (ch6 < deadBLow) return PICKUP_1;
         else if (ch6 > deadBHigh) return DELIVERY;
     }
+    
 
     return NONE;
 }
@@ -105,8 +109,7 @@ void armPos(int rotation, int angle, int shoulder, int elbow, int wrist, int del
     setServoAngle(4, wrist);
     // setServoAngle(5, claw);
     setServoAngle(0, rotation);
-    vTaskDelay(del);
-    
+    vTaskDelay(del);   
 }
 
 void inputHandle(){
@@ -115,15 +118,6 @@ void inputHandle(){
 
     // Handle position change
     processArmPosition();
-    
-    // if (channelValues[4]>1500){
-    //   armPos(front, 175, 10, 165, 135, pauseMov); //pick up
-    // }
-    // else{
-    //   // setServoAngle(1,135);
-    //   vTaskDelay(pauseMov);
-    //   armPos(front, 95, 65, 105, 135, pauseMov); //armPos (back, 110, 110, 70, 10, openClaw,10);
-    // } 
 }
 
 //Pick1 armPos(back, 20,115,90,10,pauseMov) backward
@@ -153,9 +147,9 @@ void processArmPosition() {
     // Define transitions needing lift-up
     bool needsTransition = false;
 
-    if ((previousTarget == PICKUP_1 || previousTarget == PICKUP_2) && currentTarget == DELIVERY)
+    if ((previousTarget == PICKUP_1 || previousTarget == PICKUP_2) && (currentTarget == DELIVERY || currentTarget == STORAGE))
         needsTransition = true;
-    else if (previousTarget == DELIVERY && (currentTarget == PICKUP_1 || currentTarget == PICKUP_2))
+    else if ((previousTarget == DELIVERY || currentTarget == STORAGE) && (currentTarget == PICKUP_1 || currentTarget == PICKUP_2))
         needsTransition = true;
 
     // Go to lift-up first if needed
@@ -167,8 +161,8 @@ void processArmPosition() {
     // Move to final target
     switch (currentTarget) {
         case PICKUP_1:
-            setServoAngle(3, pickPos1[3]+15);          //To avoid hitting the floor
-            setServoAngle(2,pickPos1[2]+15);
+            setServoAngle(3, pickPos1[3]+10);          //To avoid hitting the floor
+            setServoAngle(2,pickPos1[2]+10);
             vTaskDelay(pauseMov*4);
             armPos(pickPos1[0], pickPos1[1], pickPos1[2], pickPos1[3], pickPos1[4], pauseMov);
             break;
@@ -180,6 +174,10 @@ void processArmPosition() {
         case DELIVERY:
             armPos(deliveryPos[0], deliveryPos[1], deliveryPos[2], deliveryPos[3], deliveryPos[4], pauseMov);
             break;
+        
+        case STORAGE:
+            armPos(storagePos[0][0],storagePos[0][1],storagePos[0][2],storagePos[0][3],storagePos[0][4], pauseMov);
+            break;
 
         default:
             break;
@@ -188,48 +186,3 @@ void processArmPosition() {
     // Update previous state
     previousTarget = currentTarget;
 }
-
-
-
-// void processArmPosition() {
-//     int ch4 = channelValues[4];
-//     int ch5 = channelValues[5];
-//     int ch6 = channelValues[6];
-
-//     // Check if switches have changed
-//     if (ch4 == prevCh4 && ch5 == prevCh5 && ch6 == prevCh6) return;
-
-//     // Update previous values
-//     prevCh4 = ch4;
-//     prevCh5 = ch5;
-//     prevCh6 = ch6;
-
-//     // Logic for Pick and Deliver
-//     if (ch4 > deadBHigh) {
-//         if (ch6 < deadBLow) {
-//             // Pick Position 1
-//             moveArmSafely(pickPos1);
-//         } else if (ch6 > deadBHigh) {
-//             moveArmSafely(deliveryPos);
-//         }
-//     }
-//     else if (ch4 < deadBLow && ch5 >= deadBHigh) {
-//         if (ch6 < deadBLow) {
-//             // Pick Position 1
-//             moveArmSafely(pickPos1);
-//         } else if (ch6 > deadBHigh) {
-//             moveArmSafely(deliveryPos);
-//         }
-//     }
-//     else if (ch4 < deadBLow && ch5 < deadBLow) {
-//         if (ch6 < deadBLow) {
-//             moveArmSafely(storagePos[0]);
-//         }
-//         else if (ch6 >= deadBHigh && ch6 <= deadBLow) {
-//             moveArmSafely(storagePos[1]);
-//         }
-//         else if (ch6 > deadBHigh) {
-//             moveArmSafely(storagePos[2]);
-//         }
-//     }
-// }

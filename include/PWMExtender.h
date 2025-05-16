@@ -24,7 +24,8 @@ enum ArmTarget {
     NONE,
     PICKUP_1,
     PICKUP_2,
-    DELIVERY
+    DELIVERY,
+    STORAGE
 };
 
 const int openClaw = 160;
