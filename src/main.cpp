@@ -28,16 +28,11 @@ void setup()
     // Configure the task to run on Core 1
     // taskManager.taskCreation(myTask, "Core1_Task", 2048, 500, 3, 1); // Task created on main.cpp
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 
-    // taskMotorDriving.taskCreation(MotorDriving,"Core1_MotorDriving",4096,25,5,0);
+    taskMotorDriving.taskCreation(MotorDriving,"Core1_MotorDriving",4096,25,5,0);
     // taskLineFollow.taskCreation(LineFollow,"Core1_Line",2048,10,4,1);
 }
 
 void loop()
 {
-    /* if (conveyorSystem.isSwitchPressed()) {
-        Serial.println("Switch pressed!");
-        delay(200); // Debounce
-    }
-    delay(10); */
     // Nothing in loop, tasks are handled by FreeRTOS
 }

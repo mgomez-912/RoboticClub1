@@ -63,8 +63,8 @@ private:
     uint8_t redLevel = 0;
     
     // Motor configurations
-    const MotorConfig BLUE_MOTOR = {0, 1, 4095, 2048};
-    const MotorConfig RED_MOTOR = {3, 2, 4095, 2048};
+    const MotorConfig BLUE_MOTOR = {3, 2, 4095, 2048};
+    const MotorConfig RED_MOTOR = {0, 1, 4095, 2048};
     
     #ifndef SDA_PIN
         #define SDA_PIN 40   // Default if not defined elsewhere

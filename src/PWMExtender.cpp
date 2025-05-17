@@ -7,13 +7,13 @@ int currentSpeed = 0;
 int targetSpeed = 0;
 
 void PWMExtender(void *pvParameters) {
-    initializeServo(0);
+    initializeServo(SERVO_CHANNEL);
     //initializeServo(5);
 
     while(true) {
       // Sweep the servo back and forth
         // Serial.println("Sweeping servo...");
-        sweepServoByColor(0); 
+        sweepServoByColor(SERVO_CHANNEL); 
         //sweepServo(0);
         // sweepServo(5);
         
@@ -23,7 +23,7 @@ void PWMExtender(void *pvParameters) {
 
 // Function to initialize the PCA9685
 // In TaskServoPCA.cpp - modify initializeServo()
-void initializeServo(int servoChannel) {
+void initializeServo(uint8_t channel) {
   Serial.begin(115200);
   while(!Serial); // Wait for serial monitor in debug mode
 
@@ -40,7 +40,7 @@ void initializeServo(int servoChannel) {
   Serial.printf("PCA9685 initialized at %dHz\n", SERVO_FREQ);
   
   // Test communication
-  pwm.setPWM(servoChannel, 0, 0); // Start with servo off
+  pwm.setPWM(channel, 0, 0); // Start with servo off
   delay(1000);
 }
 
@@ -84,7 +84,7 @@ void setServoAngle(uint8_t channel, uint8_t angle) {
 
 // Function to sweep the servo based on color
 uint8_t neutralpos = 45;
-void sweepServoByColor(int servoChannel) {
+void sweepServoByColor(uint8_t channel) {
   uint8_t targetAngle;
 
   if (detectedColor == "blue") {
@@ -101,7 +101,7 @@ void sweepServoByColor(int servoChannel) {
   }
 
   // Move to target color position
-  setServoAngle(servoChannel, targetAngle);
+  setServoAngle(channel, targetAngle);
   delay(3000);  // Hold position briefly
 
   // Return to neutral

@@ -10,7 +10,7 @@
 extern Adafruit_PWMServoDriver pwm;
 
 // Define servo parameters
-#define SERVO_CHANNEL 5     // Channel on PCA9685 (0-15)
+#define SERVO_CHANNEL 7     // Channel on PCA9685 (0-15)
 #define SERVO_MIN 100       // Minimum pulse length count
 #define SERVO_MAX 500      // Maximum pulse length count
 #define SERVO_FREQ 50       // Servo frequency (50 Hz)
@@ -21,9 +21,9 @@ extern Adafruit_PWMServoDriver pwm;
 
 // Function declarations
 void PWMExtender(void *pvParameters); // Task function
-void initializeServo(int);      // Initialize PCA9685
+void initializeServo(uint8_t channel);      // Initialize PCA9685
 //void sweepServo(int);          // Sweep servo back and forth
 void setServoAngle(uint8_t channel, uint8_t angle); // Set specific angle
-void sweepServoByColor(int servoChannel); // Sweep servo based on color
+void sweepServoByColor(uint8_t channel); // Sweep servo based on color
 
 #endif

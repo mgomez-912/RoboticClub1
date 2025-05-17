@@ -119,6 +119,23 @@ void ConveyorSystem::begin() {
 }
 
 
+
+
+/* void ConveyorSystem::ConveyorBeltMotor(void* pvParameters) {
+    ConveyorSystem* controller = static_cast<ConveyorSystem*>(pvParameters);
+    Serial.println("Conveyor task started");
+
+    for (;;) {
+        uint8_t targetSwitch = 16;
+        Serial.println("Moving red conveyor");
+        // Access RED_MOTOR through the controller instance
+        controller->moveMotor(controller->RED_MOTOR, controller->RED_MOTOR.deliverSpeed);
+        
+        delay(1000);
+        controller->stopAll();
+    }
+} */
+
 void ConveyorSystem::ConveyorBeltMotor(void* pvParameters) {
     ConveyorSystem* controller = static_cast<ConveyorSystem*>(pvParameters);
     Serial.println("Conveyor task started");
@@ -126,8 +143,8 @@ void ConveyorSystem::ConveyorBeltMotor(void* pvParameters) {
     for (;;) {
         uint8_t targetSwitch = 16;
         // Check for delivery mode (delivery switches pressed)
-        if (controller->isSwitchActiveDebounced(controller->deliverySwitches[0]) && 
-            controller->isSwitchActiveDebounced(controller->deliverySwitches[1])) {
+        if (controller->isSwitchPressed(controller->deliverySwitches[0]) && 
+            controller->isSwitchPressed(controller->deliverySwitches[1])) {
             controller->setMode(DELIVER_MODE);
             Serial.println("Delivery mode activated");
         }
@@ -146,8 +163,7 @@ void ConveyorSystem::ConveyorBeltMotor(void* pvParameters) {
                 else if (*level > 0 && (!controller->isBusy())) {
                     controller->startCollectionMovement(detectedColor);
                     uint8_t currentLevel = (controller->movingColor == "blue") ? 
-                        controller->blueLevel : controller->
-                        ;
+                        controller->blueLevel : controller->redLevel;
                     uint8_t targetSwitch = controller->getTargetSwitch(controller->movingColor, currentLevel);
                     Serial.print("TARGET SWITCH: ");
                     Serial.println(controller->getTargetSwitch(controller->movingColor, currentLevel));
@@ -172,13 +188,13 @@ void ConveyorSystem::ConveyorBeltMotor(void* pvParameters) {
                 delay(1000);
             }
 
-            /* // Check movement completion
+            // Check movement completion
             if (controller->isMoving) {
                 uint8_t currentLevel = (controller->movingColor == "blue") ? 
                     controller->blueLevel : controller->redLevel;
                 uint8_t targetSwitch = controller->getTargetSwitch(controller->movingColor, currentLevel);
 
-                if (controller->isSwitchActiveDebounced(targetSwitch)) {
+                if (controller->isSwitchPressed(targetSwitch)) {
                     controller->stopAll();
                     controller->isMoving = false;
                     controller->operationInProgress = false;
@@ -189,7 +205,7 @@ void ConveyorSystem::ConveyorBeltMotor(void* pvParameters) {
                     *level = *level + 1;
                     Serial.println(controller->movingColor + " reached Level " + String(*level));
                 }
-            } */
+            } 
         }
         // --- DELIVERY MODE ---
         else if (controller->currentMode == DELIVER_MODE) {
@@ -217,19 +233,33 @@ void ConveyorSystem::startCollectionMovement(String color) {
 void ConveyorSystem::executeDelivery() {
     operationInProgress = true;
     
-    // Get delivery durations based on current levels (both at Level 4)
-    int duration = getDeliveryDuration();
+    // Get delivery durations for each motor based on their levels
+    int blueDuration = getDeliveryDuration(blueLevel);
+    int redDuration = getDeliveryDuration(redLevel);
     
     // Start both motors
     moveMotor(BLUE_MOTOR, BLUE_MOTOR.deliverSpeed);
     moveMotor(RED_MOTOR, RED_MOTOR.deliverSpeed);
     
-    // Run for the delivery duration
-    if (duration > 0) {
-        delay(duration);
+    // Determine which motor needs to run longer
+    if (blueDuration > redDuration) {
+        delay(redDuration);  // Both motors run
+        moveMotor(RED_MOTOR, 0);  // Stop the motor that's done
+        delay(blueDuration - redDuration);  // Continue with just blue motor
+        moveMotor(BLUE_MOTOR, 0);
+    }
+    else if (redDuration > blueDuration) {
+        delay(blueDuration);  // Both motors run
+        moveMotor(BLUE_MOTOR, 0);  // Stop the motor that's done
+        delay(redDuration - blueDuration);  // Continue with just red motor
+        moveMotor(RED_MOTOR, 0);
+    }
+    else {
+        // If durations are equal
+        delay(blueDuration);
+        stopAll();
     }
     
-    stopAll();
     operationInProgress = false;
 }
 

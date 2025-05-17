@@ -27,12 +27,12 @@ void ColorSensor(void *pvParameters) {
     while (true) {
         uint16_t r, g, b, c;
         tcs.getRawData(&r, &g, &b, &c);
-        //Serial.printf("R:%d G:%d B:%d C:%d\n", r, g, b, c);
-        if (c > 400 && (b - r - g) > 150) {
+        Serial.printf("R:%d G:%d B:%d C:%d\n", r, g, b, c);
+        if (c > 400 && ((float)b/c) > 0.5) {
             detectedColor = "blue";
             Serial.println("BLUE DETECTED");
         } 
-        else if (c > 400 && (r - b - g) > 150) {
+        else if (c > 350 && ((float)r/c) > 0.5) {
             detectedColor = "red";
             Serial.println("RED DETECTED");
         } else {
