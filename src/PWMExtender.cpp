@@ -7,18 +7,21 @@ int prevCh4 = -1;
 int prevCh5 = -1;
 int prevCh6 = -1;
 
+bool currentTargetArm = false;
+int currentArmElbow = 100;
+int fix = 0;
 /////////////////////////////////////////
 // Storage positions: rotation, angle, shoulder, elbow, wrist
 int storagePos[3][5] = {
     {front-5, 105, 155, 130, 135},  // Storage 1
-    {150, 85, 75, 90, 130},  // Storage 2
+    {front, 90, 65, 85, 135},  // Storage 2
     {170, 80, 80, 85, 125}   // Storage 3
 };
-int deliveryPos[5] = {front, 95, 60, 90, 135};
+int deliveryPos[5] = {front, 90, 70, 75, 135};
 int liftUpPos[5] = {front, 120, 20, 145, 135};  // safe transition pose
 
-int pickPos1[5] = {front, 167, 0, 160, 135}; 
-int pickPos2[5]  = {front, 140, 10, 100, 135};
+int pickPos1[5] = {front, 180, 10, 170, 135}; 
+int pickPos2[5]  = {front, 160, 30, 100, 135};
 //pick1 armPos(front, 175, 20, 165, 135, pauseMov) forward
 
 void PWMExtender(void *pvParameters) {
@@ -82,16 +85,20 @@ ArmTarget getArmTargetFromSwitches() {
     int ch5 = channelValues[5];
     int ch6 = channelValues[6];
 
-    if (ch4 > deadBHigh && ch5 < deadBLow) {
+    if (ch4 > deadBHigh){ //&& ch5 < deadBLow) {
         if (ch6 < deadBLow) return PICKUP_2;
         else if (ch6 > deadBHigh) return DELIVERY;
-    } else if (ch4 > deadBHigh && ch5 > deadBHigh) {
-        if (ch6 < deadBLow) return STORAGE;
-        if (ch6 > deadBHigh) return DELIVERY;
-    }else {
+    } else {
         if (ch6 < deadBLow) return PICKUP_1;
         else if (ch6 > deadBHigh) return DELIVERY;
     }
+    // if (ch4 > deadBHigh && ch5 > deadBHigh) {            //originally after the first else
+    //     if (ch6 < deadBLow) return STORAGE;
+    //     if (ch6 > deadBHigh) return DELIVERY;
+    // }else {
+    //     if (ch6 < deadBLow) return PICKUP_1;
+    //     else if (ch6 > deadBHigh) return DELIVERY;
+    // }
     
 
     return NONE;
@@ -100,10 +107,10 @@ ArmTarget getArmTargetFromSwitches() {
 
 
 void armPos(int rotation, int angle, int shoulder, int elbow, int wrist, int del){
+    currentArmElbow = elbow;
     setServoAngle(1, angle);
     vTaskDelay(del);
     setServoAngle(2, shoulder);
-    vTaskDelay(del);
     setServoAngle(3, elbow);
     vTaskDelay(del);
     setServoAngle(4, wrist);
@@ -116,7 +123,7 @@ void inputHandle(){
     if(channelValues[7]>1500) setServoAngle(5,openClaw);
     else setServoAngle(5,closedClaw);
 
-    // Handle position change
+    updateArmAngleWithFix();  // Dynamically adjust the angle every loop
     processArmPosition();
 }
 
@@ -132,7 +139,7 @@ to deliver: go directly from both cases.
 
 void moveArmSafely(int to[5]) {
     armPos(liftUpPos[0], liftUpPos[1], liftUpPos[2], liftUpPos[3], liftUpPos[4], pauseMov);
-    vTaskDelay(200);
+    vTaskDelay(150);
     armPos(to[0], to[1], to[2], to[3], to[4], pauseMov);
 }
 
@@ -147,15 +154,15 @@ void processArmPosition() {
     // Define transitions needing lift-up
     bool needsTransition = false;
 
-    if ((previousTarget == PICKUP_1 || previousTarget == PICKUP_2) && (currentTarget == DELIVERY || currentTarget == STORAGE))
+    if ((previousTarget == DELIVERY || currentTarget == STORAGE) && (currentTarget == PICKUP_1 || currentTarget == PICKUP_2))
         needsTransition = true;
-    else if ((previousTarget == DELIVERY || currentTarget == STORAGE) && (currentTarget == PICKUP_1 || currentTarget == PICKUP_2))
-        needsTransition = true;
+    // else if ((previousTarget == PICKUP_1 || previousTarget == PICKUP_2) && (currentTarget == DELIVERY || currentTarget == STORAGE))
+    //         needsTransition = true;
 
     // Go to lift-up first if needed
     if (needsTransition) {
         armPos(liftUpPos[0], liftUpPos[1], liftUpPos[2], liftUpPos[3], liftUpPos[4], pauseMov);
-        vTaskDelay(200);
+        vTaskDelay(150);
     }
 
     // Move to final target
@@ -165,6 +172,7 @@ void processArmPosition() {
             setServoAngle(2,pickPos1[2]+10);
             vTaskDelay(pauseMov*4);
             armPos(pickPos1[0], pickPos1[1], pickPos1[2], pickPos1[3], pickPos1[4], pauseMov);
+            currentTargetArm = false;
             break;
 
         case PICKUP_2:
@@ -173,10 +181,12 @@ void processArmPosition() {
 
         case DELIVERY:
             armPos(deliveryPos[0], deliveryPos[1], deliveryPos[2], deliveryPos[3], deliveryPos[4], pauseMov);
+            currentTargetArm = true;
             break;
         
         case STORAGE:
-            armPos(storagePos[0][0],storagePos[0][1],storagePos[0][2],storagePos[0][3],storagePos[0][4], pauseMov);
+            // armPos(storagePos[0][0],storagePos[0][1],storagePos[0][2],storagePos[0][3],storagePos[0][4], pauseMov);
+            armPos(storagePos[1][0],storagePos[1][1],storagePos[1][2],storagePos[1][3],storagePos[1][4], pauseMov);
             break;
 
         default:
@@ -185,4 +195,13 @@ void processArmPosition() {
 
     // Update previous state
     previousTarget = currentTarget;
+}
+
+void updateArmAngleWithFix() {
+    int adjusted;
+    // Handle position change
+    fix=map(channelValues[5], 990, 2010, 0, 10);
+    if(currentTargetArm == true)  adjusted = constrain(currentArmElbow + fix, 0, 200);
+    if(currentTargetArm == false) adjusted = constrain(currentArmElbow - fix, 0, 200);
+    setServoAngle(3, adjusted);
 }

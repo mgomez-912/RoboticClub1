@@ -11,8 +11,7 @@ volatile int currentChannel = 0;
 void RXRead(void *pvParameters) {
     pinMode(PPM_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(PPM_PIN), ppmInterruptHandler, FALLING);
-
-    // Print the most recent values for each channel
+    // // Print the most recent values for each channel
     // for (int i = 0; i < NUM_CHANNELS; i++) {
 
     //     Serial.print(channelValues[i]);

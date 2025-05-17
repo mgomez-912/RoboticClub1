@@ -122,10 +122,10 @@ void updateMotor(MotorState &m) {
 
 void calculateMotors(int throttle, int strafe, int rotation) {
   // Mecanum calculations (keep original signs)
-  motors[0].targetSpeed = throttle + strafe + rotation;  // FR
-  motors[1].targetSpeed = throttle + strafe - rotation;  // FL
-  motors[2].targetSpeed = throttle - strafe + rotation;  // RR
-  motors[3].targetSpeed = throttle - strafe - rotation;  // RL
+  motors[0].targetSpeed = throttle + strafe + rotation*0.8;  // FR
+  motors[1].targetSpeed = throttle + strafe - rotation*0.8;  // FL
+  motors[2].targetSpeed = throttle - strafe + rotation*0.8;  // RR
+  motors[3].targetSpeed = throttle - strafe - rotation*0.8;  // RL
 //   Serial.println(motors[0].targetSpeed);
 
   // Constrain and update to motors

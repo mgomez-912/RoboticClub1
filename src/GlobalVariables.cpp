@@ -1,16 +1,17 @@
 #include "GlobalVariables.h"
 
 TaskManager taskManager;
-TaskManager taskRGBLed;
+// TaskManager taskRGBLed;
 TaskManager taskPrint;
 TaskManager taskRXRead;
 TaskManager taskMotorDriving;
 TaskManager taskServot1;
 TaskManager taskPWMExt;
-TaskManager taskLineFollow;
-TaskManager taskLineSense;
+// TaskManager taskLineFollow;
+// TaskManager taskLineSense;
+// TaskManager taskSBUSRead;
 
-const int NUM_CHANNELS = 9;                                 // Number of channels to read
+const int NUM_CHANNELS = 8;                                 // Number of channels to read
 volatile unsigned int channelValues[NUM_CHANNELS]={0};
 
 // Mutex for thread-safe access

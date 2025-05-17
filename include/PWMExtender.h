@@ -50,5 +50,6 @@ void inputHandle();
 ArmTarget getArmTargetFromSwitches();
 void moveArmSafely(int to[5]);
 void processArmPosition();
+void updateArmAngleWithFix();
 
 #endif
