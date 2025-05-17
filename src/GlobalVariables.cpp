@@ -10,6 +10,7 @@ TaskManager taskPWMExt;
 // TaskManager taskLineFollow;
 // TaskManager taskLineSense;
 // TaskManager taskSBUSRead;
+TaskManager taskUltrasound;
 
 const int NUM_CHANNELS = 8;                                 // Number of channels to read
 volatile unsigned int channelValues[NUM_CHANNELS]={0};
@@ -23,3 +24,6 @@ int position = 3500;
 int lost_count = 0;
 int lostCycles = 55;
 int inter_count = 0;
+
+//Distance sensor
+int distance = 100;

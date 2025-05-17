@@ -14,6 +14,7 @@ extern TaskManager taskPWMExt;
 // extern TaskManager taskLineFollow;
 // extern TaskManager taskLineSense;
 // extern TaskManager taskSBUSRead;
+extern TaskManager taskUltrasound;
 
 extern const int NUM_CHANNELS;                                 // Number of channels to read
 extern volatile unsigned int channelValues[];                  // Array to store channel values
@@ -27,5 +28,8 @@ extern int position;
 extern int lost_count;                  //Counter for the cycles when can see any line
 extern int lostCycles;
 extern int inter_count;                 //Counter for the intersection crossed
+
+// Distance sensor
+extern int distance;
 
 #endif
