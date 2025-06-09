@@ -29,7 +29,4 @@ extern int lost_count;                  //Counter for the cycles when can see an
 extern int lostCycles;
 extern int inter_count;                 //Counter for the intersection crossed
 
-// Distance sensor
-extern int distance;
-
 #endif

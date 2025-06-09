@@ -27,7 +27,7 @@ struct MotorState {
 extern MotorState motors[4];
 
 const int motorProt = 50;  // Default protection time for motor direction change
-const int speedlim = 135;   // Maximum input for the motor driver (0 - 255) use 50 for lineFOl
+const int speedlim = 140;   // Maximum input for the motor driver (0 - 255) use 50 for lineFOl
 
 // Channel values
 const int minres = 980;
@@ -35,7 +35,7 @@ const int maxres = 2020;
 
 // Ramp-up configuration
 const int rampStep = 5;         // Step size for speed increase
-const int rampDelay = 5;        // Delay in milliseconds for each ramp step
+const int rampDelay = 2;        // Delay in milliseconds for each ramp step
 
 const int deadzone = 50;        // Adjusted deadzone
 const int stopThreshold = 20;   // Immediate stop threshold

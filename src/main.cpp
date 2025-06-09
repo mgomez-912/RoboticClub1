@@ -2,7 +2,7 @@
 
 void setup()
 {
-    Serial.begin(115200);
+    // Serial.begin(115200);
 
     // Configure the task to run on Core 0
     // task.taskCreation(Function, Name, Size, sleepTime, priority (0-5), core);
@@ -10,7 +10,7 @@ void setup()
     // taskSBUSRead.taskCreation(SBUSRead, "Core0_SBUSRead",4096, 20, 5, 0);  
     // taskLineSense.taskCreation(LineSense, "Core0_LineSense", 2048,5,5,0); 
     taskRXRead.taskCreation(RXRead,"Core0_RXReader",2048,20,5,0);
-    taskPWMExt.taskCreation(PWMExtender,"Core0_PWMExtender",3000,50,3,0);
+    taskPWMExt.taskCreation(PWMExtender,"Core0_PWMExtender",4096,50,4,0);
     
     // Configure the task to run on Core 1
     // taskPrint.taskCreation(Printer, "Core1_Printer", 2048, 100,1,1); 

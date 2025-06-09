@@ -57,7 +57,7 @@ void initializeServo(int servoChannel) {
   
   pwm.setOscillatorFrequency(27000000);
   pwm.setPWMFreq(SERVO_FREQ);
-  Serial.printf("PCA9685 initialized at %dHz\n", SERVO_FREQ);
+//   Serial.printf("PCA9685 initialized at %dHz\n", SERVO_FREQ);
   
   // Test communication
   pwm.setPWM(servoChannel, 0, 0); // Start with servo off
@@ -85,22 +85,17 @@ ArmTarget getArmTargetFromSwitches() {
     int ch5 = channelValues[5];
     int ch6 = channelValues[6];
 
-    if (ch4 > deadBHigh){ //&& ch5 < deadBLow) {
+    if (ch4 > deadBHigh && ch5 < deadBLow) {
         if (ch6 < deadBLow) return PICKUP_2;
         else if (ch6 > deadBHigh) return DELIVERY;
-    } else {
+    } else 
+    if (ch4 > deadBHigh && ch5 > deadBHigh) {            //originally after the first else
+        if (ch6 < deadBLow) return STORAGE;
+        if (ch6 > deadBHigh) return DELIVERY;
+    }else {
         if (ch6 < deadBLow) return PICKUP_1;
         else if (ch6 > deadBHigh) return DELIVERY;
     }
-    // if (ch4 > deadBHigh && ch5 > deadBHigh) {            //originally after the first else
-    //     if (ch6 < deadBLow) return STORAGE;
-    //     if (ch6 > deadBHigh) return DELIVERY;
-    // }else {
-    //     if (ch6 < deadBLow) return PICKUP_1;
-    //     else if (ch6 > deadBHigh) return DELIVERY;
-    // }
-    
-
     return NONE;
 }
 
@@ -123,7 +118,7 @@ void inputHandle(){
     if(channelValues[7]>1500) setServoAngle(5,openClaw);
     else setServoAngle(5,closedClaw);
 
-    updateArmAngleWithFix();  // Dynamically adjust the angle every loop
+    // updateArmAngleWithFix();  // Dynamically adjust the angle every loop
     processArmPosition();
 }
 
@@ -192,16 +187,15 @@ void processArmPosition() {
         default:
             break;
     }
-
     // Update previous state
     previousTarget = currentTarget;
 }
 
-void updateArmAngleWithFix() {
-    int adjusted;
-    // Handle position change
-    fix=map(channelValues[5], 990, 2010, 0, 10);
-    if(currentTargetArm == true)  adjusted = constrain(currentArmElbow + fix, 0, 200);
-    if(currentTargetArm == false) adjusted = constrain(currentArmElbow - fix, 0, 200);
-    setServoAngle(3, adjusted);
-}
+// void updateArmAngleWithFix() {
+//     int adjusted;
+//     // Handle position change
+//     fix=map(channelValues[5], 990, 2010, 0, 10);
+//     if(currentTargetArm == true)  adjusted = constrain(currentArmElbow + fix, 0, 200);
+//     if(currentTargetArm == false) adjusted = constrain(currentArmElbow - fix, 0, 200);
+//     setServoAngle(3, adjusted);
+// }

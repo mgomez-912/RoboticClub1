@@ -24,6 +24,3 @@ int position = 3500;
 int lost_count = 0;
 int lostCycles = 55;
 int inter_count = 0;
-
-//Distance sensor
-int distance = 100;
