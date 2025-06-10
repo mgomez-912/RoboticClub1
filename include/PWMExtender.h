@@ -15,9 +15,12 @@ extern Adafruit_PWMServoDriver pwm;
 #define SERVO_MAX 500      // Maximum pulse length count
 #define SERVO_FREQ 50       // Servo frequency (50 Hz)
 
-// Define custom I2C pins for ESP32
-const int SDA_PIN = 40;          // Data pin (SDA)
-const int SCL_PIN = 41;          // Clock pin (SCL)
+// Define custom I2C pins for ESP32 Marcio's team
+// const int SDA_PIN = 40;          // Data pin (SDA)
+// const int SCL_PIN = 41;          // Clock pin (SCL)
+// Define custom I2C pins for ESP32 Grace's team
+const int SDA_PIN = 17;          // Data pin (SDA)
+const int SCL_PIN = 16;          // Clock pin (SCL)
 
 /////////////////////////////////////////
 enum ArmTarget {

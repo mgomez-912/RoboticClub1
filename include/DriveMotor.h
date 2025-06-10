@@ -5,16 +5,27 @@
 #include "GlobalVariables.h"
 #include <driver/timer.h>
 
-//version bjgala
-const int M1_Forward = 35;
-const int M1_Reverse = 36;
-const int M3_Forward = 37;
-const int M3_Reverse = 38;
+// //version bjgala
+// const int M1_Forward = 35;
+// const int M1_Reverse = 36;
+// const int M3_Forward = 37;
+// const int M3_Reverse = 38;
 
-const int M2_Forward = 4;
-const int M2_Reverse = 5;
-const int M4_Forward = 6;
-const int M4_Reverse = 7;
+// const int M2_Forward = 4;
+// const int M2_Reverse = 5;
+// const int M4_Forward = 6;
+// const int M4_Reverse = 7;
+
+//version Grace
+const int M1_Forward = 21;
+const int M1_Reverse = 47;
+const int M3_Forward = 19;
+const int M3_Reverse = 20;
+
+const int M2_Forward = 35;
+const int M2_Reverse = 0;
+const int M4_Forward = 45;
+const int M4_Reverse = 48;
 
 // Motor State Structure
 struct MotorState {
@@ -27,14 +38,14 @@ struct MotorState {
 extern MotorState motors[4];
 
 const int motorProt = 50;  // Default protection time for motor direction change
-const int speedlim = 140;   // Maximum input for the motor driver (0 - 255) use 50 for lineFOl
+const int speedlim = 200;   // Maximum input for the motor driver (0 - 255) use 50 for lineFOl
 
 // Channel values
 const int minres = 980;
 const int maxres = 2020;
 
 // Ramp-up configuration
-const int rampStep = 5;         // Step size for speed increase
+const int rampStep = 10;         // Step size for speed increase
 const int rampDelay = 2;        // Delay in milliseconds for each ramp step
 
 const int deadzone = 50;        // Adjusted deadzone
