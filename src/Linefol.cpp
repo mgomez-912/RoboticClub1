@@ -40,93 +40,228 @@ void initPIDController() {
     linePID.SetOutputLimits(-outputLimit, outputLimit);
   }
 
-void actionsPID(int status){      //Navigation function
-  switch (status)
+// void actionsPID(int status){      //Navigation function
+//   switch (status)
+//   {
+//   case 0:                         //Following line, normal scenario
+//   // Serial.println("Case0");
+//     //////////////////// PID 
+//     portENTER_CRITICAL(&pidMux);
+//     linePID.SetTunings(Kp, Ki, Kd);
+//     linePosition = position;
+//     linePID.Compute();
+//     portEXIT_CRITICAL(&pidMux);
+//     break;
+  
+//   case 1:                         //Handle no line scenario
+//   // Serial.println("Case1");
+//     portENTER_CRITICAL(&pidMux);
+//     linePID.SetTunings(Kp_lost,Ki_lost,Kd_lost);
+//     linePID.Compute();
+//     portEXIT_CRITICAL(&pidMux);
+//     // stopMotors();
+//     break;
+
+//   case 2:                         //Handle intersection scenario
+//   // Serial.println(inter_count);
+//     if(inter_count == 3){
+//       actionDone=false;
+//       brakeCorrection(225, 65);
+//       if(brakeDone) interRotation(950,100,1);
+//       // interRotation(750,100,1);
+//       if(actionDone) {
+//         inter_count = 0;
+//       }
+//     }
+//     break;
+  
+//   default:
+//     break;
+//   }
+
+// }
+
+// // Speed correection for rotations or other decision (speedlim=55; time=150, mag=50 works well)
+// void brakeCorrection(int time, int correctionMag) {
+//   // these static locals keep state between calls
+//   static TickType_t  startTick = 0;
+//   static bool        braking   = false;
+
+//   TickType_t now = xTaskGetTickCount();
+
+//   if (!braking) {
+//       // --- start the braking interval ---
+//       startTick  = now;
+//       braking    = true;
+//       brakeDone = false;
+//   }
+
+//   // --- actively keep braking until time elapses ---
+//   if (braking) {
+//       calculateMotors(-correctionMag, 0, 0);
+
+//       if ((now - startTick) >= pdMS_TO_TICKS(time)) {
+//           braking    = false;
+//           brakeDone = true;
+//       }
+//   }
+// }
+
+// // 90 degrees rotation for intersections, 0 left, 1 right
+// void interRotation (int time, int rotationMag, bool dir){
+//   // these static locals keep state between calls
+//   static TickType_t  startTick = 0;
+//   static bool        rotating   = false;
+
+//   TickType_t now = xTaskGetTickCount();
+
+//   if (!rotating) {
+//     startTick  = now;
+//     stopMotors();
+//     rotating    = true;
+//     actionDone = false;
+//   }
+//   if (rotating) {
+//     calculateMotors(50, 0, rotationMag * (dir?1:-1)); // try speedlim/2 in throttle
+  
+//     if ((now - startTick) >= pdMS_TO_TICKS(time)) {
+//         rotating    = false;
+//         actionDone = true;
+//     }
+//   }
+// }
+
+  void actionsPID(int status)
   {
-  case 0:                         //Following line, normal scenario
-  // Serial.println("Case0");
-    //////////////////// PID 
-    portENTER_CRITICAL(&pidMux);
-    linePID.SetTunings(Kp, Ki, Kd);
-    linePosition = position;
-    linePID.Compute();
-    portEXIT_CRITICAL(&pidMux);
-    break;
-  
-  case 1:                         //Handle no line scenario
-  // Serial.println("Case1");
-    portENTER_CRITICAL(&pidMux);
-    linePID.SetTunings(Kp_lost,Ki_lost,Kd_lost);
-    linePID.Compute();
-    portEXIT_CRITICAL(&pidMux);
-    // stopMotors();
-    break;
+    // 0: Line following or idle
+    // 1: Braking phase
+    // 2: Rotating phase
+    static int intersectionPhase = 0;
 
-  case 2:                         //Handle intersection scenario
-  // Serial.println(inter_count);
-    if(inter_count == 3){
-      actionDone=false;
-      brakeCorrection(225, 65);
-      if(brakeDone) interRotation(950,100,1);
-      // interRotation(750,100,1);
-      if(actionDone) {
-        inter_count = 0;
+    switch (status)
+    {
+    case 0: // Normal line following
+      if (intersectionPhase == 0)
+      { // Only if not in intersection action
+        portENTER_CRITICAL(&pidMux);
+        linePID.SetTunings(Kp, Ki, Kd);
+        linePosition = position;
+        linePID.Compute();
+        portEXIT_CRITICAL(&pidMux);
+      }
+      break;
+
+    case 1: // No line detected
+      portENTER_CRITICAL(&pidMux);
+      linePID.SetTunings(Kp_lost, Ki_lost, Kd_lost);
+      linePID.Compute();
+      portEXIT_CRITICAL(&pidMux);
+      break;
+
+    case 2: // Intersection detected
+      if (intersectionPhase == 0)
+      { // Only if not already handling intersection
+        if (inter_count == 3)
+        {
+          Serial.println("Intersection 3 detected. Entering braking phase.");
+          intersectionPhase = 1; // Start braking
+          stopMotors();          // Stop before new action
+        }
+        else
+        {
+          // Continue line following for other intersections
+          portENTER_CRITICAL(&pidMux);
+          linePID.SetTunings(Kp, Ki, Kd);
+          linePosition = position;
+          linePID.Compute();
+          portEXIT_CRITICAL(&pidMux);
+        }
+      }
+      break;
+
+    default:
+      break;
+    }
+
+    // --- Handle intersection actions ---
+    if (intersectionPhase == 1)
+    {                            // Braking phase
+      brakeCorrection(800, 200); // Continually call until complete
+      if (brakeDone)
+      {
+        Serial.println("Braking complete. Entering rotation phase.");
+        intersectionPhase = 2; // Move to rotation
       }
     }
-    break;
-  
-  default:
-    break;
-  }
-
-}
-
-// Speed correection for rotations or other decision (speedlim=55; time=150, mag=50 works well)
-void brakeCorrection(int time, int correctionMag) {
-  // these static locals keep state between calls
-  static TickType_t  startTick = 0;
-  static bool        braking   = false;
-
-  TickType_t now = xTaskGetTickCount();
-
-  if (!braking) {
-      // --- start the braking interval ---
-      startTick  = now;
-      braking    = true;
-      brakeDone = false;
-  }
-
-  // --- actively keep braking until time elapses ---
-  if (braking) {
-      calculateMotors(-correctionMag, 0, 0);
-
-      if ((now - startTick) >= pdMS_TO_TICKS(time)) {
-          braking    = false;
-          brakeDone = true;
+    else if (intersectionPhase == 2)
+    {                            // Rotating phase
+      interRotation(600, 80, 1); // Continually call until complete (1 for right turn)
+      if (actionDone)
+      {
+        Serial.println("Rotation complete. Resetting count and returning to normal.");
+        inter_count = 0;       // Reset intersection counter
+        intersectionPhase = 0; // Return to normal line following
       }
-  }
-}
-
-// 90 degrees rotation for intersections, 0 left, 1 right
-void interRotation (int time, int rotationMag, bool dir){
-  // these static locals keep state between calls
-  static TickType_t  startTick = 0;
-  static bool        rotating   = false;
-
-  TickType_t now = xTaskGetTickCount();
-
-  if (!rotating) {
-    startTick  = now;
-    stopMotors();
-    rotating    = true;
-    actionDone = false;
-  }
-  if (rotating) {
-    calculateMotors(50, 0, rotationMag * (dir?1:-1)); // try speedlim/2 in throttle
-  
-    if ((now - startTick) >= pdMS_TO_TICKS(time)) {
-        rotating    = false;
-        actionDone = true;
     }
   }
-}
+
+  // Controls braking/backward movement
+  void brakeCorrection(int time, int correctionMag)
+  {
+    static TickType_t startTick = 0;
+    static bool braking = false;
+
+    TickType_t now = xTaskGetTickCount();
+
+    if (!braking)
+    { // Start new braking sequence
+      startTick = now;
+      braking = true;
+      brakeDone = false; // Reset done flag
+      Serial.println("BrakeCorrection started.");
+    }
+
+    if (braking)
+    {                                        // While braking
+      calculateMotors(-correctionMag, 0, 0); // Apply backward motor power
+
+      if ((now - startTick) >= pdMS_TO_TICKS(time))
+      {
+        stopMotors(); // Stop motors after time
+        braking = false;
+        brakeDone = true; // Set done flag
+        Serial.println("BrakeCorrection finished.");
+      }
+    }
+  }
+
+  // Controls 90-degree rotation for intersections
+  void interRotation(int time, int rotationMag, bool dir)
+  {
+    static TickType_t startTick = 0;
+    static bool rotating = false;
+
+    TickType_t now = xTaskGetTickCount();
+
+    if (!rotating)
+    { // Start new rotation sequence
+      startTick = now;
+      stopMotors(); // Stop before rotation
+      rotating = true;
+      actionDone = false; // Reset done flag
+      Serial.println("InterRotation started.");
+    }
+
+    if (rotating)
+    {                                                       // While rotating
+      calculateMotors(50, 0, rotationMag * (dir ? 1 : -1)); // Apply rotation power
+
+      if ((now - startTick) >= pdMS_TO_TICKS(time))
+      {
+        stopMotors(); // Stop motors after time
+        rotating = false;
+        actionDone = true; // Set done flag
+        Serial.println("InterRotation finished.");
+      }
+    }
+  }
