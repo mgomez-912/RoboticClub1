@@ -1,44 +1,40 @@
+#include "LineFol.h"
+#include "DriveMotor.h"
+#include "LinePosition.h"
 
-// #include "LineFol.h"
-// #include "DriveMotor.h"
-// #include "LinePosition.h"
+//////////////////////////////////////////
+// PID Variables
+float linePosition;
+float rotationOutput = 0.0;
+float setpoint = 3500.0; // Center position
+QuickPID linePID(&linePosition, &rotationOutput, &setpoint);
 
-// //////////////////////////////////////////
-// // PID Variables
-// float linePosition;
-// float rotationOutput = 0.0;
-// float setpoint = 3500.0;  // Center position
-// QuickPID linePID(&linePosition, &rotationOutput, &setpoint);
+///////////////////////////////
+static TickType_t now = 0;
+static TickType_t slideTime = 0;
+static TickType_t rotationTime = 0;
+bool actionDone = true;
+bool brakeDone = false;
 
-// ///////////////////////////////
-// static TickType_t now = 0;
-// static TickType_t slideTime = 0;
-// static TickType_t rotationTime = 0;
-// bool actionDone = true;
-// bool brakeDone = false;
+void LineFollow(void *pvParameters)
+{
+  initPIDController();
 
-// void LineFollow(void *pvParameters) {
-//     SerialLine.begin(9600, SERIAL_8N1, lineRX, lineTX); // Fixed baud rate to 9600 for this model
-//     Serial.begin(115200);
-//     Serial.println("Sensor Monitoring Started");
+  while (true)
+  {
+    actionsPID(statusLine);
 
-//     initPIDController();
-//     sendRequest();      // Initial request
+    vTaskDelay(taskLineFollow.getIntervalms() / portTICK_PERIOD_MS);
+  }
+}
 
-//     while(true) {
-//         processSensorData();
-//         actionsPID(statusLine);
-
-//         vTaskDelay(taskLineFollow.getIntervalms() / portTICK_PERIOD_MS);
-//     }
-// }
-
-// ///////////////////////////////////////////
-// void initPIDController() {
-//     linePID.SetTunings(Kp, Ki, Kd);
-//     linePID.SetMode(linePID.Control::automatic);
-//     linePID.SetOutputLimits(-outputLimit, outputLimit);
-//   }
+///////////////////////////////////////////
+void initPIDController()
+{
+  linePID.SetTunings(Kp, Ki, Kd);
+  linePID.SetMode(linePID.Control::automatic);
+  linePID.SetOutputLimits(-outputLimit, outputLimit);
+}
 
 // void actionsPID(int status){      //Navigation function
 //   switch (status)
@@ -161,7 +157,7 @@ void actionsPID(int status)
   case 2: // Intersection detected
     if (intersectionPhase == 0)
     { // Only if not already handling intersection
-      if (inter_count == 3)
+      if (inter_count == 1)
       {
         Serial.println("Intersection 3 detected. Entering braking phase.");
         intersectionPhase = 1; // Start braking
@@ -185,8 +181,8 @@ void actionsPID(int status)
 
   // --- Handle intersection actions ---
   if (intersectionPhase == 1)
-  {                            // Braking phase
-    brakeCorrection(800, 200); // Continually call until complete
+  {                           // Braking phase
+    brakeCorrection(50, 250); // Continually call until complete
     if (brakeDone)
     {
       Serial.println("Braking complete. Entering rotation phase.");
@@ -195,7 +191,7 @@ void actionsPID(int status)
   }
   else if (intersectionPhase == 2)
   {                            // Rotating phase
-    interRotation(600, 80, 1); // Continually call until complete (1 for right turn)
+    interRotation(600, 90, 1); // Continually call until complete (1 for right turn)
     if (actionDone)
     {
       Serial.println("Rotation complete. Resetting count and returning to normal.");
@@ -253,8 +249,8 @@ void interRotation(int time, int rotationMag, bool dir)
   }
 
   if (rotating)
-  {                                                       // While rotating
-    calculateMotors(50, 0, rotationMag * (dir ? 1 : -1)); // Apply rotation power
+  {                                                      // While rotating
+    calculateMotors(0, 0, rotationMag * (dir ? 1 : -1)); // Apply rotation power
 
     if ((now - startTick) >= pdMS_TO_TICKS(time))
     {

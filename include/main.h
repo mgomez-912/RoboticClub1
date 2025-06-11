@@ -16,6 +16,6 @@
 #include "DriveMotor.h"
 #include "PWMExtender.h"
 #include "TaskServo.h"
-// #include "LineFol.h"
-// #include "LinePosition.h"
+#include "LineFol.h"
+#include "LinePosition.h"
 #include "Ultrasound.h"
