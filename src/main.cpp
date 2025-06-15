@@ -8,7 +8,7 @@ void setup()
     // task.taskCreation(Function, Name, Size, sleepTime, priority (0-5), core);
     // taskRGBLed.taskCreation(RGBLed, "Core0_blinkRGB", 2048, 50, 2, 0);      // External Task
     // taskSBUSRead.taskCreation(SBUSRead, "Core0_SBUSRead",4096, 20, 5, 0);
-    taskLineSense.taskCreation(LineSense, "Core0_LineSense", 2048, 5, 5, 0);
+    taskLineSense.taskCreation(LineSense, "Core0_LineSense", 2048, 1, 5, 0);
     // taskRXRead.taskCreation(RXRead,"Core0_RXReader",2048,20,5,0);
     // taskPWMExt.taskCreation(PWMExtender,"Core0_PWMExtender",4096,50,4,0);
 

@@ -4,13 +4,11 @@
 
 // FreeRTOS timing constants
 static TickType_t xLastRequestTime = 0;
-const TickType_t xResponseTimeout = pdMS_TO_TICKS(10); // keep it bigger than taskLineFSense.getIntervalms()
-const TickType_t xRequestInterval = pdMS_TO_TICKS(10); // For these example i used *5 and *10 respectively
+const TickType_t xResponseTimeout = pdMS_TO_TICKS(5); // keep it bigger than taskLineFSense.getIntervalms()
+const TickType_t xRequestInterval = pdMS_TO_TICKS(5); // For these example i used *5 and *10 respectively
 
 HardwareSerial SerialLine(1);
 uint8_t line_data[3];
-
-bool inIntersection = false;
 
 void LineSense(void *pvParameters)
 {
@@ -32,6 +30,62 @@ void sendRequest()
 {
     SerialLine.write(0x57);
     xLastRequestTime = xTaskGetTickCount();
+}
+
+int calculatePosition(uint8_t status)
+{
+    // Convert status byte to sensor activations (0 = active)
+
+    for (int i = 0; i < 8; i++)
+    {
+        sensors[i] = !((status >> (7 - i)) & 0x01); // Bit 7 = sensor 0 (leftmost)
+    }
+
+    // Calculate weighted average
+    float sum = 0;
+    int count = 0;
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (sensors[i])
+        {
+            sum += i;
+            count++;
+        }
+    }
+
+    position = (sum / count) * 1000;
+
+    if (actionDone)
+    {
+        if (count == 0)
+        {
+            statusLine = 1; // Handle no line detected (turn right possibly)
+            lost_count++;
+            return position = 0;
+        }
+        else if (count >= 5)
+        {
+            statusLine = 2; // Handle intersection
+
+            if (!inIntersection)
+            {
+                inter_count++;
+                inIntersection = true;
+            }
+        }
+        else
+        {
+            statusLine = 0; // Normal situation compute PID
+            inIntersection = false;
+            lost_count = 0;
+        }
+    }
+
+    // Serial.println(inter_count);
+
+    // Return scaled position 0-7000
+    return position;
 }
 
 // int calculatePosition(uint8_t status)
@@ -56,88 +110,32 @@ void sendRequest()
 //         }
 //     }
 
+//     // Return scaled position
 //     position = (sum / count) * 1000;
-
-//     if (actionDone)
+//     if (count == 0)
 //     {
-//         if (count == 0)
+//         statusLine = 1; // No line
+//         lost_count++;
+//         position = 0;
+//     }
+//     else if (count >= 5)
+//     {
+//         statusLine = 2; // Intersection
+//         if (!inIntersection)
 //         {
-//             statusLine = 1; // Handle no line detected (turn right possibly)
-//             lost_count++;
-//             return position = 0;
-//         }
-//         else if (count >= 5)
-//         {
-//             statusLine = 2; // Handle intersection
-
-//             if (!inIntersection)
-//             {
-//                 inter_count++;
-//                 inIntersection = true;
-//             }
-//         }
-//         else
-//         {
-//             statusLine = 0; // Normal situation compute PID
-//             inIntersection = false;
-//             lost_count = 0;
+//             inter_count++;
+//             inIntersection = true;
 //         }
 //     }
+//     else
+//     {
+//         statusLine = 0; // Normal line
+//         inIntersection = false;
+//         lost_count = 0;
+//     }
 
-//     // Serial.println(inter_count);
-
-//     // Return scaled position 0-7000
 //     return position;
 // }
-
-int calculatePosition(uint8_t status)
-{
-    // Convert status byte to sensor activations (0 = active)
-    bool sensors[8];
-    for (int i = 0; i < 8; i++)
-    {
-        sensors[i] = !((status >> (7 - i)) & 0x01); // Bit 7 = sensor 0 (leftmost)
-    }
-
-    // Calculate weighted average
-    float sum = 0;
-    int count = 0;
-
-    for (int i = 0; i < 8; i++)
-    {
-        if (sensors[i])
-        {
-            sum += i;
-            count++;
-        }
-    }
-
-    // Return scaled position
-    position = (sum / count) * 1000;
-    if (count == 0)
-    {
-        statusLine = 1; // No line
-        lost_count++;
-        position = 0;
-    }
-    else if (count >= 5)
-    {
-        statusLine = 2; // Intersection
-        if (!inIntersection)
-        {
-            inter_count++;
-            inIntersection = true;
-        }
-    }
-    else
-    {
-        statusLine = 0; // Normal line
-        inIntersection = false;
-        lost_count = 0;
-    }
-
-    return position;
-}
 
 void processSensorData()
 {

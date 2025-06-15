@@ -24,3 +24,5 @@ int position = 3500;
 int lost_count = 0;
 int lostCycles = 75;
 int inter_count = 0;
+bool sensors[8];
+bool inIntersection = false;

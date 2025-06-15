@@ -28,5 +28,7 @@ extern int position;
 extern int lost_count; // Counter for the cycles when can see any line
 extern int lostCycles;
 extern int inter_count; // Counter for the intersection crossed
+extern bool sensors[8];
+extern bool inIntersection;
 
 #endif
