@@ -19,6 +19,7 @@ bool brakeDone = false;
 static bool rotating = false;
 static bool hasLeftLine = false;
 static int intersectionPhase = 0;
+int c = 0;
 
 void LineFollow(void *pvParameters)
 {
@@ -41,7 +42,10 @@ void initPIDController()
 
 void actionsPID(int status)
 { // Navigation function
-  Serial.println(status);
+  if(c==8){
+    stopMotors();
+    return;
+  }
   switch (status)
   {
   case 0: // Following line, normal scenario
@@ -76,8 +80,37 @@ void actionsPID(int status)
 
     case 2:                         //Handle intersection scenario
     // Serial.println(inter_count);
-      if(inter_count == 1){
+      if(c==0 && inter_count == 1)
+        {
+          interRotationUntilLineFound(45,1);
+        }
+      if(c==1 && inter_count == 2)
+      {
         interRotationUntilLineFound(45,0);
+      }
+      if(c==2 && inter_count == 2)
+      {
+        interRotationUntilLineFound(45,0);
+      }
+      if(c==3 && inter_count == 4)
+      {
+        interRotationUntilLineFound(45,0);
+      }
+      if(c==4 && inter_count == 2)
+      {
+        interRotationUntilLineFound(45,0);
+      }
+      if(c==5 && inter_count == 1)
+      {
+        interRotationUntilLineFound(45,0);
+      }
+      if(c==6 && inter_count == 1)
+      {
+        interRotationUntilLineFound(45,1);
+      }
+      if(c==7 && inter_count == 2)
+      {
+        c++;
       }
       break;
 
@@ -108,6 +141,7 @@ void actionsPID(int status)
         rotating = false;
         actionDone = true;
         inter_count = 0;
+        c++;
         return;
       }
     }

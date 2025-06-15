@@ -12,7 +12,6 @@ const int lineTX = 17;
 
 // Data variables
 extern uint8_t Patrol_data[3];
-extern int deltime;
 
 //function
 void LineSense(void *pvParameters);
