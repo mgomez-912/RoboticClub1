@@ -114,7 +114,6 @@ int calculatePosition(uint8_t status)
 
     // Return scaled position
     position = (sum / count) * 1000;
-
     if (count == 0)
     {
         statusLine = 1; // No line
@@ -137,7 +136,6 @@ int calculatePosition(uint8_t status)
         lost_count = 0;
     }
 
-    
     return position;
 }
 
@@ -168,7 +166,7 @@ void processSensorData()
         // Serial.print("Status: 0b");
         // for(int i=7; i>=0; i--) Serial.print((line_data[0] >> i) & 0x01);
         // Serial.print(" | Position: ");
-        Serial.println(position); // Right 0, Left 7000
+        // Serial.println(position); // Right 0, Left 7000
 
         // Rate-limited requests
         if ((xTaskGetTickCount() - xLastRequestTime) >= xRequestInterval)
