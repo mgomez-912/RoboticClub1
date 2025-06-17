@@ -3,9 +3,9 @@
 // Initialize the PWM driver
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 /////////////////////////////////////////
-int prevCh4 = -1;
-int prevCh5 = -1;
-int prevCh6 = -1;
+// int prevCh4 = -1;
+// int prevCh5 = -1;
+// int prevCh6 = -1;
 
 bool currentTargetArm = false;
 int currentArmElbow = 100;
@@ -20,9 +20,13 @@ int storagePos[3][5] = {
 int deliveryPos[5] = {front, 90, 70, 75, 135};
 int liftUpPos[5] = {front, 120, 20, 145, 135};  // safe transition pose
 
-int pickPos1[5] = {front, 180, 10, 170, 135}; 
+int pickPos1[5] = {front, 175, 10, 170, 135}; 
 int pickPos2[5]  = {front, 160, 30, 100, 135};
 //pick1 armPos(front, 175, 20, 165, 135, pauseMov) forward
+
+State currentState = WAIT_FOR_OBJECT;
+bool actionInProgress = false;
+ArmTarget requestedTarget = PICKUP_1;
 
 void PWMExtender(void *pvParameters) {
     initializeServo(0);
@@ -81,22 +85,22 @@ void setServoAngle(uint8_t channel, uint8_t angle) {
 
 /////////////////////////////////
 ArmTarget getArmTargetFromSwitches() {
-    int ch4 = channelValues[4];
-    int ch5 = channelValues[5];
-    int ch6 = channelValues[6];
+    // int ch4 = channelValues[4];
+    // int ch5 = channelValues[5];
+    // int ch6 = channelValues[6];
 
-    if (ch4 > deadBHigh && ch5 < deadBLow) {
-        if (ch6 < deadBLow) return PICKUP_2;
-        else if (ch6 > deadBHigh) return DELIVERY;
-    } else 
-    if (ch4 > deadBHigh && ch5 > deadBHigh) {            //originally after the first else
-        if (ch6 < deadBLow) return STORAGE;
-        if (ch6 > deadBHigh) return DELIVERY;
-    }else {
-        if (ch6 < deadBLow) return PICKUP_1;
-        else if (ch6 > deadBHigh) return DELIVERY;
-    }
-    return NONE;
+    // if (ch4 > deadBHigh && ch5 < deadBLow) {
+    //     if (ch6 < deadBLow) return PICKUP_2;
+    //     else if (ch6 > deadBHigh) return DELIVERY;
+    // } else 
+    // if (ch4 > deadBHigh && ch5 > deadBHigh) {            //originally after the first else
+    //     if (ch6 < deadBLow) return STORAGE;
+    //     if (ch6 > deadBHigh) return DELIVERY;
+    // }else {
+    //     if (ch6 < deadBLow) return PICKUP_1;
+    //     else if (ch6 > deadBHigh) return DELIVERY;
+    // }
+    return requestedTarget;
 }
 
 
@@ -114,13 +118,20 @@ void armPos(int rotation, int angle, int shoulder, int elbow, int wrist, int del
     vTaskDelay(del);   
 }
 
-void inputHandle(){
-    if(channelValues[7]>1500) setServoAngle(5,openClaw);
-    else setServoAngle(5,closedClaw);
+// void inputHandle(){
+//     // if(channelValues[7]>1500) setServoAngle(5,openClaw);
+//     // else setServoAngle(5,closedClaw);
 
-    // updateArmAngleWithFix();  // Dynamically adjust the angle every loop
-    processArmPosition();
-}
+//     // updateArmAngleWithFix();  // Dynamically adjust the angle every loop
+//     // processArmPosition();
+
+//     if(distance < 10 && distance > 0) {
+//         // If the distance is less than 10 cm, stop the arm
+//         armPos(liftUpPos[0], liftUpPos[1], liftUpPos[2], liftUpPos[3], liftUpPos[4], pauseMov);
+//         vTaskDelay(150);
+//         return;
+//     }
+// }
 
 //Pick1 armPos(back, 20,115,90,10,pauseMov) backward
 //pick1 armPos(front, 175, 20, 165, 135, pauseMov) forward
@@ -180,8 +191,8 @@ void processArmPosition() {
             break;
         
         case STORAGE:
-            // armPos(storagePos[0][0],storagePos[0][1],storagePos[0][2],storagePos[0][3],storagePos[0][4], pauseMov);
-            armPos(storagePos[1][0],storagePos[1][1],storagePos[1][2],storagePos[1][3],storagePos[1][4], pauseMov);
+            armPos(storagePos[0][0],storagePos[0][1],storagePos[0][2],storagePos[0][3],storagePos[0][4], pauseMov);
+            // armPos(storagePos[1][0],storagePos[1][1],storagePos[1][2],storagePos[1][3],storagePos[1][4], pauseMov);
             break;
 
         default:
@@ -199,3 +210,61 @@ void processArmPosition() {
 //     if(currentTargetArm == false) adjusted = constrain(currentArmElbow - fix, 0, 200);
 //     setServoAngle(3, adjusted);
 // }
+
+void inputHandle() {
+    static unsigned long lastActionTime = 0;
+
+    switch (currentState) {
+        case WAIT_FOR_OBJECT:
+            requestedTarget = PICKUP_1;
+            processArmPosition();
+            if (distance > 0 && distance < 17) {
+                currentState = CLOSE_CLAW;
+                actionInProgress = false;
+            }
+            break;
+
+        case CLOSE_CLAW:
+            if (!actionInProgress) {
+                setServoAngle(5, closedClaw);
+                actionInProgress = true;
+                lastActionTime = millis();
+            }
+            if (millis() - lastActionTime > 250) {
+                currentState = MOVE_TO_STORAGE;
+                actionInProgress = false;
+            }
+            break;
+
+        case MOVE_TO_STORAGE:
+            if (!actionInProgress) {
+                requestedTarget = STORAGE;
+                processArmPosition();
+                actionInProgress = true;
+                lastActionTime = millis();
+            }
+            if (millis() - lastActionTime > 1000) {
+                currentState = OPEN_CLAW;
+                actionInProgress = false;
+            }
+            break;
+
+        case OPEN_CLAW:
+            if (!actionInProgress) {
+                setServoAngle(5, openClaw);
+                actionInProgress = true;
+                lastActionTime = millis();
+            }
+            if (millis() - lastActionTime > 750) {
+                currentState = RETURN_TO_PICKUP;
+                actionInProgress = false;
+            }
+            break;
+
+        case RETURN_TO_PICKUP:
+            requestedTarget = PICKUP_1;
+            processArmPosition();
+            currentState = WAIT_FOR_OBJECT;
+            break;
+    }
+}

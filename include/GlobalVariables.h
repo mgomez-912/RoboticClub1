@@ -31,4 +31,7 @@ extern int inter_count; // Counter for the intersection crossed
 extern bool sensors[8];
 extern bool inIntersection;
 
+// Distance sensor
+extern float distance; // Distance in cm
+
 #endif

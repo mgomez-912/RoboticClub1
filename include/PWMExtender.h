@@ -19,8 +19,8 @@ extern Adafruit_PWMServoDriver pwm;
 // const int SDA_PIN = 40;          // Data pin (SDA)
 // const int SCL_PIN = 41;          // Clock pin (SCL)
 // Define custom I2C pins for ESP32 Grace's team
-const int SDA_PIN = 17;          // Data pin (SDA)
-const int SCL_PIN = 16;          // Clock pin (SCL)
+const int SDA_PIN = 40;          // Data pin (SDA)
+const int SCL_PIN = 41;          // Clock pin (SCL)
 
 /////////////////////////////////////////
 enum ArmTarget {
@@ -40,6 +40,15 @@ const int pauseMov = 150;
 const int deadBHigh = 1750;
 const int deadBLow = 1250;
 
+enum State {
+    WAIT_FOR_OBJECT,
+    CLOSE_CLAW,
+    MOVE_TO_STORAGE,
+    OPEN_CLAW,
+    RETURN_TO_PICKUP
+};
+
+extern ArmTarget requestedTarget;
 
 // Function declarations
 void PWMExtender(void *pvParameters); // Task function
