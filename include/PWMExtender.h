@@ -63,5 +63,9 @@ ArmTarget getArmTargetFromSwitches();
 void moveArmSafely(int to[5]);
 void processArmPosition();
 void updateArmAngleWithFix();
+void initializeServo(); // Initialize PCA9685 with default settings
+void setServoAngle(uint8_t channel, uint8_t angle); // Set servo angle
+void inputHandle(); // Handle input and state transitions
+void setServoAngle(uint8_t channel, uint8_t angle); // Set servo angle
 
 #endif

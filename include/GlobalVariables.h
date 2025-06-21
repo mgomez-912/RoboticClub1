@@ -21,6 +21,7 @@ extern const int NUM_CHANNELS;                // Number of channels to read
 extern volatile unsigned int channelValues[]; // Array to store channel values
 
 extern int speedlim;  // Maximum input for the motor driver (0 - 255)
+// speedlim = 50; // 11.7-12v
 
 // Mutex for thread-safe access
 extern portMUX_TYPE pidMux;

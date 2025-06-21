@@ -113,7 +113,7 @@ int calculatePosition(uint8_t status)
             read_index = 0;
             return position = 0; // Return 0 as per original logic
         }
-        else if (count >= 5) // Intersection detected
+        else if (count >= 4) // Intersection detected
         {
             statusLine = 2; // Handle intersection
             if (!inIntersection)

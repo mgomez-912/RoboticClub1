@@ -11,7 +11,7 @@
 
 ///////////////////////////////////
 // PID Parameters
-const float Kp = 0.0075, Ki = 0.0002, Kd = 0.0031; // kp=0.0038-44, ki=0.0001-2 , kd=0.0018-30, Kp = 0.00425, Ki = 0.0002, Kd = 0.0023;
+const float Kp = 0.007, Ki = 0.0002, Kd = 0.0031; // kp=0.0038-44, ki=0.0001-2 , kd=0.0018-30, Kp = 0.00425, Ki = 0.0002, Kd = 0.0023;
 const float Kp_lost = 0.008, Ki_lost = 0.00000, Kd_lost = 0.0025;
 
 const int outputLimit = 250; // Max rotation adjustment

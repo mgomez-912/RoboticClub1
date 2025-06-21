@@ -24,11 +24,11 @@ void sendCommand(const byte *cmd) {
 
 void initTOFDistanceSensor() {
     sendCommand(distanceCMD[1]);
-    delay(2000);
+    delay(1000);
     sendCommand(timeCMD[0]);
-    delay(2000);
+    delay(1000);
     sendCommand(SYSCMD[3]);
-    delay(2000);
+    delay(1000);
 }
 
 long getTOFDistance() {
@@ -51,6 +51,6 @@ void TOFDistanceTask(void *pvParameters) {
                 tofDistanceMM = Buf[2] * 256 + Buf[3];
             }
         }
-        vTaskDelay(1); // Minimal delay to yield
+        vTaskDelay(250 / portTICK_PERIOD_MS);
     }
 }
