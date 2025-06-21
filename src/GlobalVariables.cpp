@@ -11,9 +11,12 @@ TaskManager taskLineFollow;
 TaskManager taskLineSense;
 // TaskManager taskSBUSRead;
 TaskManager taskUltrasound;
+TaskManager taskTOFDistance;
 
 const int NUM_CHANNELS = 8; // Number of channels to read
 volatile unsigned int channelValues[NUM_CHANNELS] = {0};
+
+int speedlim = 50;  // Maximum input for the motor driver (0 - 255)
 
 // Mutex for thread-safe access
 portMUX_TYPE pidMux = portMUX_INITIALIZER_UNLOCKED;

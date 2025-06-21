@@ -15,9 +15,12 @@ extern TaskManager taskLineFollow;
 extern TaskManager taskLineSense;
 // extern TaskManager taskSBUSRead;
 extern TaskManager taskUltrasound;
+extern TaskManager taskTOFDistance;
 
 extern const int NUM_CHANNELS;                // Number of channels to read
 extern volatile unsigned int channelValues[]; // Array to store channel values
+
+extern int speedlim;  // Maximum input for the motor driver (0 - 255)
 
 // Mutex for thread-safe access
 extern portMUX_TYPE pidMux;

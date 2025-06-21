@@ -216,9 +216,10 @@ void inputHandle() {
 
     switch (currentState) {
         case WAIT_FOR_OBJECT:
+            speedlim = 50;
             requestedTarget = PICKUP_1;
             processArmPosition();
-            if (distance > 0 && distance < 17) {
+            if (distance > 0 && distance < 20) {
                 currentState = CLOSE_CLAW;
                 actionInProgress = false;
             }
@@ -233,6 +234,7 @@ void inputHandle() {
             if (millis() - lastActionTime > 250) {
                 currentState = MOVE_TO_STORAGE;
                 actionInProgress = false;
+                speedlim = 25;
             }
             break;
 
@@ -243,7 +245,7 @@ void inputHandle() {
                 actionInProgress = true;
                 lastActionTime = millis();
             }
-            if (millis() - lastActionTime > 1000) {
+            if (millis() - lastActionTime > 500) {
                 currentState = OPEN_CLAW;
                 actionInProgress = false;
             }
@@ -255,7 +257,7 @@ void inputHandle() {
                 actionInProgress = true;
                 lastActionTime = millis();
             }
-            if (millis() - lastActionTime > 750) {
+            if (millis() - lastActionTime > 650) {
                 currentState = RETURN_TO_PICKUP;
                 actionInProgress = false;
             }
