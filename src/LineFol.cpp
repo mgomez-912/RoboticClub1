@@ -20,6 +20,7 @@ static bool rotating = false;
 static bool hasLeftLine = false;
 static int intersectionPhase = 0;
 int c = 0;
+int rotationSpeed = 70; // Speed for rotation in degrees per second
 
 void LineFollow(void *pvParameters)
 {
@@ -82,31 +83,31 @@ void actionsPID(int status)
     // Serial.println(inter_count);
       if(c==0 && inter_count == 1)
         {
-          interRotationUntilLineFound(45,1);
+          interRotationUntilLineFound(rotationSpeed ,1);
         }
       if(c==1 && inter_count == 2)
       {
-        interRotationUntilLineFound(45,0);
+        interRotationUntilLineFound(rotationSpeed ,0);
       }
       if(c==2 && inter_count == 2)
       {
-        interRotationUntilLineFound(45,0);
+        interRotationUntilLineFound(rotationSpeed ,0);
       }
       if(c==3 && inter_count == 4)
       {
-        interRotationUntilLineFound(45,0);
+        interRotationUntilLineFound(rotationSpeed ,0);
       }
       if(c==4 && inter_count == 2)
       {
-        interRotationUntilLineFound(45,0);
+        interRotationUntilLineFound(rotationSpeed ,0);
       }
       if(c==5 && inter_count == 1)
       {
-        interRotationUntilLineFound(45,0);
+        interRotationUntilLineFound(rotationSpeed ,0);
       }
       if(c==6 && inter_count == 1)
       {
-        interRotationUntilLineFound(45,1);
+        interRotationUntilLineFound(rotationSpeed ,1);
       }
       if(c==7 && inter_count == 2)
       {
@@ -144,5 +145,9 @@ void actionsPID(int status)
         c++;
         return;
       }
+    }
+    else{
+      // stopMotors();
+      calculateMotors(0, 0, -rotationSpeed* (dir ? -1 : 1));
     }
   }

@@ -6,5 +6,6 @@
         "atomic": "cpp",
         "fstream": "cpp",
         "sstream": "cpp"
-    }
+    },
+    "ros.distro": "humble"
 }

@@ -10,6 +10,12 @@ const TickType_t xRequestInterval = pdMS_TO_TICKS(5); // For these example i use
 HardwareSerial SerialLine(1);
 uint8_t line_data[3];
 
+// Add these variables with your other global variables
+const int NUM_READINGS = 3;
+static float position_readings[NUM_READINGS];
+static int read_index = 0;
+static int total_readings = 0;
+
 void LineSense(void *pvParameters)
 {
     SerialLine.begin(9600, SERIAL_8N1, lineRX, lineTX); // Fixed baud rate to 9600 for this model
@@ -32,19 +38,48 @@ void sendRequest()
     xLastRequestTime = xTaskGetTickCount();
 }
 
+
+/**
+ * @brief Calculates a moving average of position readings.
+ * @param new_position The most recent position measurement to be added to the average.
+ * @return The new averaged position.
+ */
+float getAveragePosition(float new_position)
+{
+    // Store the new reading in a circular buffer
+    position_readings[read_index] = new_position;
+
+    // Advance the index for the next reading, wrapping around if necessary
+    read_index = (read_index + 1) % NUM_READINGS;
+
+    // Keep track of how many readings have been stored, up to the maximum
+    if (total_readings < NUM_READINGS)
+    {
+        total_readings++;
+    }
+
+    // Calculate the sum of the readings in the buffer
+    float sum = 0;
+    for (int i = 0; i < total_readings; i++)
+    {
+        sum += position_readings[i];
+    }
+
+    // Return the average
+    return sum / total_readings;
+}
+
 int calculatePosition(uint8_t status)
 {
     // Convert status byte to sensor activations (0 = active)
-
     for (int i = 0; i < 8; i++)
     {
         sensors[i] = !((status >> (7 - i)) & 0x01); // Bit 7 = sensor 0 (leftmost)
     }
 
-    // Calculate weighted average
+    // Calculate weighted average for the CURRENT reading
     float sum = 0;
     int count = 0;
-
     for (int i = 0; i < 8; i++)
     {
         if (sensors[i])
@@ -54,88 +89,50 @@ int calculatePosition(uint8_t status)
         }
     }
 
-    position = (sum / count) * 1000;
+    float current_position = 0;
+    // Calculate a raw position only if sensors are detected
+    if (count > 0)
+    {
+        current_position = (sum / count) * 1000;
+    }
 
+    // Get the running average of the last 3 readings and save it globally
+    position = getAveragePosition(current_position);
+
+    // Decision-making logic based on the CURRENT sensor state
     if (actionDone)
     {
-        if (count == 0)
+        if (count == 0) // Lost the line
         {
-            statusLine = 1; // Handle no line detected (turn right possibly)
+            statusLine = 1; // Handle no line detected
             lost_count++;
-            return position = 0;
+            
+            // When line is lost, you might want to reset the average buffer
+            // and enforce a position of 0.
+            total_readings = 0; // Reset average calculation
+            read_index = 0;
+            return position = 0; // Return 0 as per original logic
         }
-        else if (count >= 5)
+        else if (count >= 5) // Intersection detected
         {
             statusLine = 2; // Handle intersection
-
             if (!inIntersection)
             {
                 inter_count++;
                 inIntersection = true;
             }
         }
-        else
+        else // Normal line following
         {
-            statusLine = 0; // Normal situation compute PID
+            statusLine = 0; // Normal situation, compute PID
             inIntersection = false;
             lost_count = 0;
         }
     }
 
-    // Serial.println(inter_count);
-
-    // Return scaled position 0-7000
+    // Return the final, smoothed position
     return position;
 }
-
-// int calculatePosition(uint8_t status)
-// {
-//     // Convert status byte to sensor activations (0 = active)
-//     bool sensors[8];
-//     for (int i = 0; i < 8; i++)
-//     {
-//         sensors[i] = !((status >> (7 - i)) & 0x01); // Bit 7 = sensor 0 (leftmost)
-//     }
-
-//     // Calculate weighted average
-//     float sum = 0;
-//     int count = 0;
-
-//     for (int i = 0; i < 8; i++)
-//     {
-//         if (sensors[i])
-//         {
-//             sum += i;
-//             count++;
-//         }
-//     }
-
-//     // Return scaled position
-//     position = (sum / count) * 1000;
-//     if (count == 0)
-//     {
-//         statusLine = 1; // No line
-//         lost_count++;
-//         position = 0;
-//     }
-//     else if (count >= 5)
-//     {
-//         statusLine = 2; // Intersection
-//         if (!inIntersection)
-//         {
-//             inter_count++;
-//             inIntersection = true;
-//         }
-//     }
-//     else
-//     {
-//         statusLine = 0; // Normal line
-//         inIntersection = false;
-//         lost_count = 0;
-//     }
-
-//     return position;
-// }
 
 void processSensorData()
 {
